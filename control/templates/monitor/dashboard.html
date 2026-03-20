@@ -618,12 +618,13 @@ async function guardarObservacion() {
         
         // Actualizar el botón de observación en la tabla
         actualizarBotonObservacion(currentActaId, observacion);
-
+        actualizarEstadisticas();
+        mostrarNotificacion('Observacion añadida', 'success')
         cerrarModal();
         
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al guardar la observación');
+        mostrarNotificacion('Error al guardar la observación', 'error');
     } finally {
         guardarBtn.innerHTML = textoOriginal;
         guardarBtn.disabled = false;
