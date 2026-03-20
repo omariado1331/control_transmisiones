@@ -603,3 +603,79 @@
 .acta-box {
     margin-bottom: 2px;
 }
+
+/* Modal de Estados */
+.estados-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding: 10px 0;
+}
+
+.estado-card {
+    background: #f5f5f5;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.estado-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.estado-card.selected {
+    border-color: #2e7d32;
+    background: #e8f5e9;
+}
+
+.estado-color {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.estado-color.transmitido { background: #2196f3; }
+.estado-color.revisado-rechazado { background: #f44336; }
+.estado-color.sin-enviar { background: #ff9800; }
+.estado-color.enviado-no-revisado { background: #4caf50; }
+
+.estado-info {
+    flex: 1;
+}
+
+.estado-nombre {
+    font-weight: 600;
+    color: #2e7d32;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.estado-descripcion {
+    font-size: 12px;
+    color: #757575;
+}
+
+.instrucciones {
+    background: #f5f5f5;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #757575;
+    font-size: 14px;
+    border-left: 4px solid #2e7d32;
+}
+
+.instrucciones i {
+    color: #2e7d32;
+    font-size: 18px;
+}

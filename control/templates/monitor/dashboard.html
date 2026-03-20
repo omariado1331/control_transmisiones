@@ -164,6 +164,58 @@
             </div>
         </div>
 
+        <!-- Modal de Cambio de Estado -->
+        <div class="modal-overlay" id="estadoModal">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3>
+                        <i class="fas fa-exchange-alt"></i>
+                        Cambiar Estado del Acta
+                    </h3>
+                    <button class="close-modal" onclick="cerrarEstadoModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="acta-info">
+                        <div class="acta-info-item">
+                            <i class="fas fa-file-alt"></i>
+                            <span><strong>Acta N°:</strong> <span id="estadoModalActaNumero">-</span></span>
+                        </div>
+                        <div class="acta-info-item">
+                            <i class="fas fa-building"></i>
+                            <span><strong>Recinto:</strong> <span id="estadoModalRecinto">-</span></span>
+                        </div>
+                        <div class="acta-info-item">
+                            <i class="fas fa-user"></i>
+                            <span><strong>Operador:</strong> <span id="estadoModalOperador">-</span></span>
+                        </div>
+                        <div class="acta-info-item">
+                            <i class="fas fa-tag"></i>
+                            <span><strong>Estado actual:</strong> <span id="estadoModalActual">-</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="estados-container" id="estadosContainer">
+                        <!-- Los estados se cargarán dinámicamente con JS -->
+                    </div>
+                    
+                    <div class="instrucciones">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Al hacer clic sobre un estado se cambiará el estado del acta automáticamente</span>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button class="modal-btn cancelar" onclick="cerrarEstadoModal()">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 <script>
@@ -178,6 +230,11 @@ let currentActaId = null;
 let currentOperadorNombre = '';
 let currentActaNumero = '';
 let currentActaEstado = '';
+
+// Variables globales para el modal de estados
+let currentEstadoActaId = null;
+let currentEstadoOperadorId = null;
+let currentEstadoRecinto = '';
 
 // Función para obtener el token CSRF
 function getCSRFToken() {
@@ -386,8 +443,14 @@ async function cargarOperadores(transmisionId) {
                     const tieneObs = acta.observacion && acta.observacion.trim() !== '';
                     const tooltip = getActaTooltip(acta);
                     actasHtml += `<div class="acta-wrapper">  
-                                    <div class="acta-box ${actaClass}" data-tooltip="${tooltip}" title="${tooltip}">
-                                        ${acta.numero}
+                                    <div 
+                                        class="acta-box ${actaClass}" 
+                                        data-tooltip="${tooltip}" 
+                                        title="${tooltip}
+                                        data-acta-id="${acta.id}"
+                                        onclick="abrirEstadoModal('${acta.id}', '${nombreCompleto}', '${op.recinto?.nombre || ''}', '${acta.numero}', '${acta.estado}')"
+                                    ">
+                                            ${acta.numero}
                                     </div>
                                     <div class="acta-footer">
                                         <button 
@@ -580,4 +643,221 @@ function actualizarBotonObservacion(actaId, observacion) {
         }
     }
 }
+
+// Definición de estados disponibles
+const ESTADOS = [
+    {
+        id: 'TRANSMITIDO',
+        nombre: 'Transmitido',
+        descripcion: 'Acta transmitida correctamente',
+        color: 'transmitido',
+        icono: 'fa-paper-plane'
+    },
+    {
+        id: 'ENVIADO_NO_REVISADO',
+        nombre: 'Enviado no revisado',
+        descripcion: 'Acta enviada pendiente de revisión',
+        color: 'enviado-no-revisado',
+        icono: 'fa-clock'
+    },
+    {
+        id: 'SIN_ENVIAR',
+        nombre: 'Sin enviar',
+        descripcion: 'Acta pendiente de envío',
+        color: 'sin-enviar',
+        icono: 'fa-hourglass'
+    },
+    {
+        id: 'REVISADO_RECHAZADO',
+        nombre: 'Revisado rechazado',
+        descripcion: 'Acta rechazada en revisión',
+        color: 'revisado-rechazado',
+        icono: 'fa-times-circle'
+    }
+];
+
+// Función para abrir el modal de estados
+function abrirEstadoModal(actaId, operadorNombre, recintoNombre, actaNumero, estadoActual) {
+    currentEstadoActaId = actaId;
+    currentEstadoRecinto = recintoNombre;
+    
+    // Llenar datos del modal
+    document.getElementById('estadoModalActaNumero').textContent = actaNumero;
+    document.getElementById('estadoModalRecinto').textContent = recintoNombre;
+    document.getElementById('estadoModalOperador').textContent = operadorNombre;
+    document.getElementById('estadoModalActual').textContent = getEstadoNombre(estadoActual);
+    
+    // Generar cards de estados
+    const estadosContainer = document.getElementById('estadosContainer');
+    let estadosHtml = '';
+    
+    ESTADOS.forEach(estado => {
+        const isSelected = estado.id === estadoActual;
+        estadosHtml += `
+            <div class="estado-card ${isSelected ? 'selected' : ''}" onclick="cambiarEstadoActa('${estado.id}')">
+                <div class="estado-color ${estado.color}"></div>
+                <div class="estado-info">
+                    <div class="estado-nombre">
+                        <i class="fas ${estado.icono}"></i>
+                        ${estado.nombre}
+                    </div>
+                    <div class="estado-descripcion">${estado.descripcion}</div>
+                </div>
+                ${isSelected ? '<i class="fas fa-check" style="color: #2e7d32;"></i>' : ''}
+            </div>
+        `;
+    });
+    
+    estadosContainer.innerHTML = estadosHtml;
+    
+    // Mostrar modal
+    document.getElementById('estadoModal').classList.add('active');
+}
+
+// Función para cerrar el modal de estados
+function cerrarEstadoModal() {
+    document.getElementById('estadoModal').classList.remove('active');
+    currentEstadoActaId = null;
+}
+
+// Función para cambiar el estado del acta
+async function cambiarEstadoActa(nuevoEstado) {
+    if (!currentEstadoActaId) return;
+    
+    // Mostrar feedback visual en la card seleccionada
+    const cards = document.querySelectorAll('.estado-card');
+    cards.forEach(card => {
+        card.style.opacity = '0.5';
+        card.style.pointerEvents = 'none';
+    });
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/reporte/${currentEstadoActaId}/estado/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                estado: nuevoEstado
+            })
+        });
+        
+        if (!response.ok) throw new Error('Error al cambiar estado');
+        
+        const data = await response.json();
+        
+        // Actualizar el cuadro del acta en la tabla
+        // actualizarEstadoActa(currentEstadoActaId, nuevoEstado);
+        
+        // Actualizar estadísticas
+        actualizarEstadisticas();
+        
+        // Cerrar modal
+        cerrarEstadoModal();
+        
+        // Mostrar mensaje de éxito
+        mostrarNotificacion('Estado actualizado correctamente', 'success');
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarNotificacion('Error al cambiar el estado', 'error');
+        
+        // Restaurar cards
+        cards.forEach(card => {
+            card.style.opacity = '1';
+            card.style.pointerEvents = 'auto';
+        });
+    }
+}
+
+// Función para actualizar el estado del acta en la interfaz
+function actualizarEstadoActa(actaId, nuevoEstado) {
+    // Buscar el cuadro del acta por su ID (asumiendo que el acta-id está en un atributo data)
+    const actaBox = document.querySelector(`.acta-box[data-acta-id="${actaId}"]`);
+    if (actaBox) {
+        // Actualizar clase de color
+        actaBox.className = `acta-box ${getActaClass(nuevoEstado)}`;
+        
+        // Actualizar tooltip
+        const nuevoTooltip = `Acta ${actaBox.textContent}: ${getEstadoNombre(nuevoEstado)}`;
+        actaBox.setAttribute('data-tooltip', nuevoTooltip);
+        actaBox.setAttribute('title', nuevoTooltip);
+    }
+}
+
+// Función para mostrar notificaciones
+function mostrarNotificacion(mensaje, tipo) {
+    // Crear elemento de notificación
+    const notificacion = document.createElement('div');
+    notificacion.className = `notificacion ${tipo}`;
+    notificacion.innerHTML = `
+        <i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        <span>${mensaje}</span>
+    `;
+    
+    // Estilos para la notificación
+    notificacion.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${tipo === 'success' ? '#4caf50' : '#f44336'};
+        color: white;
+        padding: 12px 25px;
+        border-radius: 50px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 2000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notificacion);
+    
+    // Eliminar después de 3 segundos
+    setTimeout(() => {
+        notificacion.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notificacion);
+        }, 300);
+    }, 3000);
+}
+
+// Actualizar estadísticas después de cambiar estado
+function actualizarEstadisticas() {
+    // Esta función debería recalcular los contadores basados en los datos actuales
+    // Por ahora, recargamos los datos completos
+    if (currentTransmisionId) {
+        cargarOperadores(currentTransmisionId);
+    }
+}
+
+// Agregar animaciones CSS
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
 </script>
