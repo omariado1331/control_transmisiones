@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+<div class="login-container">
+    <div class="logo-container">
+         <img src="../static/images/Logo_oep.png" alt="Logo" id="logo">
+    </div>
+
+    <h2>Bienvenido</h2>
+
+    <div class="input-group">
+        <i class="fas fa-user input-icon"></i>
+        <input type="text" id="username" placeholder="Usuario" autocomplete="off">
+    </div>
+
+    <div class="input-group">
+        <i class="fas fa-lock input-icon"></i>
+        <input type="password" id="password" placeholder="Contraseña">
+    </div>
+
+    <button onclick="login()" id="loginButton">
+        <span id="buttonText">Ingresar</span>
+        <i class="fas fa-spinner fa-spin loading" id="loading"></i>
+    </button>
+
+    <p id="error"></p>
+
+</div>
+<script>
+
+function getCSRFToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+}
+
+function login() {
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    fetch("api/login/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken()
+        },
+        body: JSON.stringify({
+            username: username,
+            password: password
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.redirect) {
+            window.location.href = data.redirect;
+        } else {
+            document.getElementById("error").innerText = data.error;
+        }
+    })
+    .catch(error => {
+        document.getElementById("error").innerText = error;
+    })
+    .finally( () => {
+        document.getElementById("buttonText").style.display = "inline";
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("loginButton").disabled = false;
+    })
+}
+
+// Función para mostrar el spinner y bloquear el botón
+function showLoading() {
+    const button = document.getElementById("loginButton");
+    const buttonText = document.getElementById("buttonText");
+    const loading = document.getElementById("loading");
+    
+    buttonText.style.display = "none";
+    loading.style.display = "inline-block";
+    button.disabled = true;
+}
+
+// Enter en los campos con spinner y bloqueo
+document.getElementById("username").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        showLoading(); // Mostrar spinner y bloquear botón
+        login();
+    }
+});
+
+document.getElementById("password").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        showLoading(); // Mostrar spinner y bloquear botón
+        login();
+    }
+});
+</script>
+
+</body>
+</html>

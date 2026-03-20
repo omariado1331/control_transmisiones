@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monitor - Sistema de Actas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../static/monitorStyle.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="logo">
+            <img src="../../static/images/Logo_oep.png" alt="Logo" id="logo" onerror="this.src='https://via.placeholder.com/40x40/2e7d32/ffffff?text=LOGO'">
+            <span>Monitoreo</span>
+        </div>
+        
+        <div class="user-info">
+            <div class="user-details">
+                <div class="user-name" id="userName">Cargando...</div>
+                <div class="user-role" id="userRole">
+                    <i class="fas fa-circle"></i>
+                    <span>Cargando...</span>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                Cerrar sesión
+            </button>
+        </div>
+    </div>
+    <!-- Contenido principal -->
+    <div class="main-container">
+        <!-- Selector de Transmisiones -->
+        <div class="transmision-selector">
+            <div class="selector-label">
+                <i class="fas fa-broadcast-tower"></i>
+                <span>Seleccionar Transmisión:</span>
+            </div>
+            
+            <select id="transmisionSelect">
+                <option value="">-- Seleccione una transmisión --</option>
+            </select>
+            
+            <button class="cargar-btn" onclick="cargarTransmision()" id="cargarBtn">
+                <i class="fas fa-sync-alt"></i>
+                <span>Cargar Datos</span>
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-container" id="statsContainer" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #2196f3;"><i class="fas fa-paper-plane"></i></div>
+                <div class="stat-info">
+                    <h3>Transmitidos</h3>
+                    <p id="totalTransmitidos">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #4caf50;"><i class="fas fa-clock"></i></div>
+                <div class="stat-info">
+                    <h3>Enviado no revisado</h3>
+                    <p id="totalEnviadoNoRevisado">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #ff9800;"><i class="fas fa-hourglass"></i></div>
+                <div class="stat-info">
+                    <h3>Sin enviar</h3>
+                    <p id="totalSinEnviar">0</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #f44336;"><i class="fas fa-times-circle"></i></div>
+                <div class="stat-info">
+                    <h3>Revisado rechazado</h3>
+                    <p id="totalRevisadoRechazado">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-container">
+            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="color: #2e7d32;">
+                    <i class="fas fa-users"></i> 
+                    Operadores
+                    <span id="operadorCount" style="font-size: 14px; color: #757575; margin-left: 10px;"></span>
+                </h3>
+                <div id="ultimaActualizacion" style="font-size: 12px; color: #9e9e9e;">
+                    <i class="fas fa-clock"></i> 
+                    <span></span>
+                </div>
+            </div>
+            
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Operador</th>
+                        <th>CI</th>
+                        <th>Celular</th>
+                        <th>Recinto</th>
+                        <th>Actas</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="5">
+                            <div class="loader-container">
+                                <div class="loader"></div>
+                                <p style="margin-top: 20px; color: #757575;">Seleccione una transmisión para cargar datos</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal de Observaciones -->
+        <div class="modal-overlay" id="observacionModal">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3>
+                        <i class="fas fa-clipboard-list"></i>
+                        Observación del Acta
+                    </h3>
+                    <button class="close-modal" onclick="cerrarModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="acta-info">
+                        <div class="acta-info-item">
+                            <i class="fas fa-user"></i>
+                            <span><strong>Operador:</strong> <span id="modalOperador">-</span></span>
+                        </div>
+                        <div class="acta-info-item">
+                            <i class="fas fa-file-alt"></i>
+                            <span><strong>Acta N°:</strong> <span id="modalActaNumero">-</span></span>
+                        </div>
+                        <div class="acta-info-item">
+                            <i class="fas fa-tag"></i>
+                            <span><strong>Estado:</strong> <span id="modalActaEstado">-</span></span>
+                        </div>
+                    </div>
+                    
+                    <textarea 
+                        class="observacion-textarea" 
+                        id="observacionTexto" 
+                        placeholder="Escribe aquí la observación del acta..."
+                    ></textarea>
+                </div>
+                
+                <div class="modal-footer">
+                    <button class="modal-btn cancelar" onclick="cerrarModal()">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                    <button class="modal-btn guardar" onclick="guardarObservacion()" id="guardarObsBtn">
+                        <i class="fas fa-save"></i>
+                        Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+
+// Configuración
+const API_BASE_URL = '/control'; // Agregar URL base si es necesario
+let transmisiones = [];
+let currentTransmisionId = null;
+
+// Variables globales para el modal
+let currentActaId = null;
+let currentOperadorNombre = '';
+let currentActaNumero = '';
+let currentActaEstado = '';
+
+// Función para obtener el token CSRF
+function getCSRFToken() {
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+}
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserData();
+    cargarTransmisiones();
+    
+    // Cargar automáticamente si hay una transmisión seleccionada (opcional)
+    const select = document.getElementById('transmisionSelect');
+    select.addEventListener('change', (e) => {
+        if (e.target.value) {
+            // Opcional: cargar automáticamente al seleccionar
+            // cargarTransmision();
+        }
+    });
+});
+
+// Cargar datos del usuario
+async function loadUserData() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/user-info/`, {
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        const data = await response.json();
+        
+        document.getElementById('userName').textContent = data.username || 'Usuario';
+        
+        const roleSpan = document.getElementById('userRole').querySelector('span');
+        roleSpan.textContent = data.role || 'Monitor';
+        
+        // Cambiar color del punto según rol
+        const roleDot = document.getElementById('userRole').querySelector('i');
+        roleDot.style.color = data.role === 'admin' ? '#f44336' : '#4caf50';
+        
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        document.getElementById('userName').textContent = 'Error';
+    }
+}
+
+// Cargar lista de transmisiones
+async function cargarTransmisiones() {
+    const select = document.getElementById('transmisionSelect');
+    const cargarBtn = document.getElementById('cargarBtn');
+    
+    try {
+        select.disabled = true;
+        cargarBtn.disabled = true;
+        select.innerHTML = '<option value="">Cargando transmisiones...</option>';
+        
+        const response = await fetch(`${API_BASE_URL}/api/transmisiones/`, {
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (!response.ok) throw new Error('Error al cargar transmisiones');
+        
+        transmisiones = await response.json();
+        
+        // Llenar select
+        let options = '<option value="">-- Seleccione una transmisión --</option>';
+        transmisiones.forEach(t => {
+            options += `<option value="${t.id}">${t.descripcion} - ${t.fecha} ${t.hora}</option>`;
+        });
+        
+        select.innerHTML = options;
+        
+    } catch (error) {
+        console.error('Error:', error);
+        select.innerHTML = '<option value="">Error al cargar transmisiones</option>';
+    } finally {
+        select.disabled = false;
+        cargarBtn.disabled = false;
+    }
+}
+
+// Función de logout
+function logout() {
+    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+        fetch(`${API_BASE_URL}/api/logout/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+        .finally(() => {
+            window.location.href = '/control/';
+        });
+    }
+}
+
+// Función cargar operadores al presionar
+function cargarTransmision() {
+    const select = document.getElementById('transmisionSelect');
+    const transmisionId = select.value;
+    
+    if (!transmisionId) {
+        alert('Por favor seleccione una transmisión');
+        return;
+    }
+    
+    currentTransmisionId = transmisionId;
+    cargarOperadores(transmisionId);
+}
+
+// Cargar datos de operadores para una transmisión
+async function cargarOperadores(transmisionId) {
+    const tableBody = document.getElementById('tableBody');
+    const statsContainer = document.getElementById('statsContainer');
+    const cargarBtn = document.getElementById('cargarBtn');
+    const operadorCount = document.getElementById('operadorCount');
+    const ultimaActualizacion = document.getElementById('ultimaActualizacion').querySelector('span');
+    
+    // Mostrar loader
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="5">
+                <div class="loader-container">
+                    <div class="loader"></div>
+                    <p style="margin-top: 20px; color: #757575;">Cargando datos de operadores...</p>
+                </div>
+            </td>
+        </tr>
+    `;
+    
+    // Deshabilitar botón
+    cargarBtn.disabled = true;
+    cargarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/monitor/${transmisionId}/operadores/`, {
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (!response.ok) throw new Error('Error al cargar operadores');
+        
+        const operadores = await response.json();
+        
+        if (!operadores || operadores.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5">
+                        <div class="no-data">
+                            <i class="fas fa-users-slash"></i>
+                            <p>No hay operadores para esta transmisión</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            statsContainer.style.display = 'none';
+            operadorCount.textContent = '(0 operadores)';
+            return;
+        }
+        
+        // Mostrar stats
+        statsContainer.style.display = 'grid';
+        
+        // Renderizar filas
+        let rows = '';
+        let totalTransmitidos = 0;
+        let totalEnviadoNoRevisado = 0;
+        let totalSinEnviar = 0;
+        let totalRevisadoRechazado = 0;
+        
+        operadores.forEach(op => {
+            // Contar estados para estadísticas
+            if (op.actas && Array.isArray(op.actas)) {
+                op.actas.forEach(acta => {
+                    switch(acta.estado) {
+                        case 'TRANSMITIDO':
+                            totalTransmitidos++;
+                            break;
+                        case 'ENVIADO_NO_REVISADO':
+                            totalEnviadoNoRevisado++;
+                            break;
+                        case 'SIN_ENVIAR':
+                            totalSinEnviar++;
+                            break;
+                        case 'REVISADO_RECHAZADO':
+                            totalRevisadoRechazado++;
+                            break;
+                    }
+                });
+            }
+            
+            const nombreCompleto = `${op.nombre || ''} ${op.apellido_paterno || ''} ${op.apellido_materno || ''}`.trim() || 'N/A';
+            
+            let actasHtml = '<div class="actas-container">';
+            if (op.actas && op.actas.length > 0) {
+                const actasOrdenadas = ordenarActasPorNumero(op.actas);
+                
+
+                actasOrdenadas.forEach(acta => {
+                    const actaClass = getActaClass(acta.estado);
+                    const tieneObs = acta.observacion && acta.observacion.trim() !== '';
+                    const tooltip = getActaTooltip(acta);
+                    actasHtml += `<div class="acta-wrapper">  
+                                    <div class="acta-box ${actaClass}" data-tooltip="${tooltip}" title="${tooltip}">
+                                        ${acta.numero}
+                                    </div>
+                                    <div class="acta-footer">
+                                        <button 
+                                            class="obs-btn ${tieneObs ? 'has-obs' : ''}"
+                                            onclick="abrirModal('${acta.id}', '${op.nombre} ${op.apellido_paterno || ''}', '${acta.numero}', '${acta.estado}', '${acta.observacion || ''}')"
+                                            title="${tieneObs ? 'Ver observación' : 'Agregar observación'}"
+                                            data-acta-id="${acta.id}"
+                                        >
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </button>
+                                    </div>
+                                  </div>`;
+                                  
+                });
+            } else {
+                actasHtml += '<span style="color: #9e9e9e; font-size: 12px;">Sin actas</span>';
+            }
+            actasHtml += '</div>';
+            
+            rows += `
+                <tr>
+                    <td><strong>${nombreCompleto}</strong></td>
+                    <td>${op.ci || 'N/A'}</td>
+                    <td>${op.celular || 'N/A'}</td>
+                    <td>
+                        <div class="recinto-info">
+                            <span class="recinto-nombre">${op.recinto?.nombre || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td>${actasHtml}</td>
+                </tr>
+            `;
+        });
+        
+        tableBody.innerHTML = rows;
+        
+        // Actualizar estadísticas
+        document.getElementById('totalTransmitidos').textContent = totalTransmitidos;
+        document.getElementById('totalEnviadoNoRevisado').textContent = totalEnviadoNoRevisado;
+        document.getElementById('totalSinEnviar').textContent = totalSinEnviar;
+        document.getElementById('totalRevisadoRechazado').textContent = totalRevisadoRechazado;
+        
+        // Actualizar contador de operadores
+        operadorCount.textContent = `(${operadores.length} operadores)`;
+        
+        // Actualizar hora de última actualización
+        const ahora = new Date();
+        ultimaActualizacion.textContent = ahora.toLocaleTimeString();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5">
+                    <div class="no-data">
+                        <i class="fas fa-exclamation-triangle" style="color: #f44336;"></i>
+                        <p>Error al cargar los datos</p>
+                        <button onclick="cargarTransmision()" style="margin-top: 10px; padding: 8px 20px; background: #2e7d32; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            Reintentar
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } finally {
+        // Restaurar botón
+        cargarBtn.disabled = false;
+        cargarBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Cargar Datos';
+    }
+}
+
+// Función para mostrar el nombre del estado
+function getEstadoNombre(estado) {
+    const estados = {
+        'TRANSMITIDO': 'Transmitido',
+        'REVISADO_RECHAZADO': 'Revisado rechazado',
+        'SIN_ENVIAR': 'Sin enviar',
+        'ENVIADO_NO_REVISADO': 'Enviado no revisado'
+    };
+    return estados[estado] || estado;
+}
+
+// Función para obtener el texto del tooltip
+function getActaTooltip(acta) {
+    const estadoTexto = {
+        'TRANSMITIDO': 'Transmitido',
+        'REVISADO_RECHAZADO': 'Revisado rechazado',
+        'SIN_ENVIAR': 'Sin enviar',
+        'ENVIADO_NO_REVISADO': 'Enviado no revisado'
+    };
+    
+    return `Acta: ${acta.numero} | ${estadoTexto[acta.estado] || 'Sin estado'}${acta.observacion ? ' | ' + acta.observacion : ''}`;
+}
+
+// Función para obtener el color de la acta según su estado
+function getActaClass(estado) {
+    const estados = {
+        'TRANSMITIDO': 'acta-transmitido',
+        'REVISADO_RECHAZADO': 'acta-revisado-rechazado',
+        'SIN_ENVIAR': 'acta-sin-enviar',
+        'ENVIADO_NO_REVISADO': 'acta-enviado-no-revisado'
+    };
+    return estados[estado] || 'acta-sin-enviar';
+}
+
+// Función para ordenar actas por número
+function ordenarActasPorNumero(actas) {
+    if (!actas) return [];
+    return [...actas].sort((a, b) => {
+        // Convertir a número para ordenamiento numérico
+        const numA = parseInt(a.numero) || 0;
+        const numB = parseInt(b.numero) || 0;
+        return numA - numB;
+    });
+}
+
+// Función para abrir el modal
+function abrirModal(actaId, operadorNombre, actaNumero, actaEstado, observacionActual) {
+    currentActaId = actaId;
+    currentOperadorNombre = operadorNombre;
+    currentActaNumero = actaNumero;
+    currentActaEstado = getEstadoNombre(actaEstado);
+    
+    // Llenar datos del modal
+    document.getElementById('modalOperador').textContent = operadorNombre;
+    document.getElementById('modalActaNumero').textContent = actaNumero;
+    document.getElementById('modalActaEstado').textContent = currentActaEstado;
+    document.getElementById('observacionTexto').value = observacionActual || '';
+    
+    // Mostrar modal
+    document.getElementById('observacionModal').classList.add('active');
+}
+
+// Función para cerrar el modal
+function cerrarModal() {
+    document.getElementById('observacionModal').classList.remove('active');
+    currentActaId = null;
+}
+
+// Función para guardar la observación
+async function guardarObservacion() {
+    if (!currentActaId) return;
+    
+    const observacion = document.getElementById('observacionTexto').value;
+    const guardarBtn = document.getElementById('guardarObsBtn');
+    const textoOriginal = guardarBtn.innerHTML;
+    
+    // Mostrar loading
+    guardarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    guardarBtn.disabled = true;
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/reporte/${currentActaId}/observacion/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({
+                observacion: observacion
+            })
+        });
+        
+        if (!response.ok) throw new Error('Error al guardar');
+        
+        // Actualizar el botón de observación en la tabla
+        actualizarBotonObservacion(currentActaId, observacion);
+
+        cerrarModal();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al guardar la observación');
+    } finally {
+        guardarBtn.innerHTML = textoOriginal;
+        guardarBtn.disabled = false;
+    }
+}
+
+// Función para actualizar el botón de observación en la tabla
+function actualizarBotonObservacion(actaId, observacion) {
+    const boton = document.querySelector(`.obs-btn[data-acta-id="${actaId}"]`);
+    if (boton) {
+        if (observacion && observacion.trim() !== '') {
+            boton.classList.add('has-obs');
+            boton.title = 'Tiene observación';
+        } else {
+            boton.classList.remove('has-obs');
+            boton.title = 'Agregar observación';
+        }
+    }
+}
+</script>
