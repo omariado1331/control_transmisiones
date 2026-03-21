@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transmisiones - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../static/navbar.css">
+</head>
+<body>
+    <script src="../../static/navbar.js"></script>
+    <div id="navbar"></div>
+
+<script>
+
+// cargar el Navbar
+function loadNavbar() {
+    fetch('/static/navbar.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('navbar').innerHTML = data;
+
+            if (window.initNavbar) {
+                window.initNavbar();
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar navbar:', error);
+            document.getElementById('navbar').innerHTML = '<div class="navbar">Error al cargar navbar</div>';
+        });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadNavbar();
+});
+
+
+</script>
+
+</body>
+</html>

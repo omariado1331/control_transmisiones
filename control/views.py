@@ -4,13 +4,23 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Count, Q
 from .models import Monitor, Soporte, Coordinador
 from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 import json
-from .models import Monitor, Soporte, Coordinador, Operador, ReporteTransmision, Transmision
+from .models import (
+    Monitor, 
+    Soporte, 
+    Coordinador, 
+    Operador, 
+    ReporteTransmision, 
+    Transmision, 
+    Acta, 
+    Recinto,
+    Actividad
+)
 
 def api_login(request):
 
@@ -32,7 +42,7 @@ def api_login(request):
 
     # detectar rol
     if user.is_superuser:
-        return JsonResponse({"redirect": "/control/admin-dashboard/"})
+        return JsonResponse({"redirect": "/control/admin-inicio/"})
 
     if Monitor.objects.filter(user=user).exists():
         return JsonResponse({"redirect": "/control/monitor-dashboard/"})
@@ -49,10 +59,22 @@ def login_view(request):
     return render(request, "login.html")
 
 @login_required
-def admin_dashboard(request):
+def admin_inicio(request):
     if not request.user.is_superuser:
         return HttpResponseForbidden("NO AUTORIZADO")
-    return render(request, "admin/dashboard.html")
+    return render(request, "admin/inicio.html")
+
+@login_required
+def admin_transmisiones(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("NO AUTORIZADO")
+    return render(request, "admin/transmisiones.html")
+
+@login_required
+def admin_actividades(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("NO AUTORIZADO")
+    return render(request, "admin/actividades.html")
 
 @login_required
 def soporte_dashboard(request):
@@ -248,3 +270,44 @@ def api_actualizar_observacion(request, reporte_id):
         "id": reporte.id,
         "observacion": reporte.observacion
     })
+
+@login_required
+def api_admin_inicio(request):
+
+    # solo administradores
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "No autorizado"}, status=403)
+
+    # totales
+    total_actas = Acta.objects.count()
+
+    total_recintos = Recinto.objects.count()
+
+    recintos_urbanos = Recinto.objects.filter(tipo="Urbano").count()
+
+    recintos_rurales = Recinto.objects.exclude(tipo="Urbano").count()
+
+    # transmisiones
+    transmisiones = list(
+        Transmision.objects.all()
+        .order_by("-fecha", "-hora")
+        .values("id", "descripcion", "fecha", "hora")
+    )
+
+    # actividades
+    actividades = list(
+        Actividad.objects.all()
+        .order_by("-fecha", "-hora")
+        .values("id", "descripcion", "fecha", "hora")
+    )
+
+    data = {
+        "total_actas": total_actas,
+        "total_recintos": total_recintos,
+        "recintos_urbanos": recintos_urbanos,
+        "recintos_rurales": recintos_rurales,
+        "transmisiones": transmisiones,
+        "actividades": actividades,
+    }
+
+    return JsonResponse(data)

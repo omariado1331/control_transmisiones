@@ -1,0 +1,36 @@
+<!-- Navbar Superior -->
+<div class="navbar">
+    <div class="logo">
+        <img src="../../static/images/Logo_oep.png" alt="Logo" id="logo">
+        <span>Administrador</span>
+    </div>
+    
+    <div class="nav-links">
+        <a href="/control/admin-inicio/" class="nav-link" data-page="inicio">
+            <i class="fas fa-home"></i> Inicio
+        </a>
+        <a href="/control/admin-transmisiones/" class="nav-link" data-page="transmisiones">
+            <i class="fas fa-broadcast-tower"></i> Transmisiones
+        </a>
+        <a href="/control/admin-actividades/" class="nav-link" data-page="actividades">
+            <i class="fas fa-history"></i> Actividades
+        </a>
+    </div>
+    
+    <div class="user-info">
+        <div class="user-details">
+            <div class="user-name" id="userName">Cargando...</div>
+            <div class="user-role" id="userRole">
+                <i class="fas fa-circle"></i>
+                <span>Administrador</span>
+            </div>
+        </div>
+        <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+            Cerrar sesión
+        </button>
+    </div>
+</div>
+
+
+

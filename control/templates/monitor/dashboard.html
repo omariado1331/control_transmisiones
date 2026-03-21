@@ -78,6 +78,25 @@
             </div>
         </div>
 
+        <!-- Buscador -->
+        <div class="buscador-container">
+            <div class="buscador-wrapper">
+                <i class="fas fa-search buscador-icon"></i>
+                <input 
+                    type="text" 
+                    id="buscadorInput" 
+                    placeholder="Buscar por operador, CI, celular, recinto o número de acta..."
+                    autocomplete="off"
+                >
+                <button id="limpiarBusqueda" class="limpiar-busqueda" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="buscador-info">
+                <span id="resultadosCount"></span>
+            </div>
+        </div>
+
         <!-- Tabla -->
         <div class="table-container">
             <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
@@ -236,6 +255,11 @@ let currentEstadoActaId = null;
 let currentEstadoOperadorId = null;
 let currentEstadoRecinto = '';
 
+// Variables para el buscador
+let datosOriginales = []; // Guardar los datos originales sin filtrar
+let timeoutBusqueda = null;
+let textoIngresadoBusqueda = '';
+
 // Función para obtener el token CSRF
 function getCSRFToken() {
     return document.cookie.split('; ')
@@ -323,6 +347,7 @@ async function cargarTransmisiones() {
 // Función de logout
 function logout() {
     if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+        mostrarNotificacion("sesion cerrada, hasta pronto", 'error');
         fetch(`${API_BASE_URL}/api/logout/`, {
             method: 'POST',
             headers: {
@@ -341,12 +366,13 @@ function cargarTransmision() {
     const transmisionId = select.value;
     
     if (!transmisionId) {
-        alert('Por favor seleccione una transmisión');
+        mostrarNotificacion('Por favor seleccione una transmisión', 'error');
         return;
     }
     
     currentTransmisionId = transmisionId;
     cargarOperadores(transmisionId);
+    mostrarNotificacion("Transmisión cargada correctamente", "success")
 }
 
 // Cargar datos de operadores para una transmisión
@@ -356,6 +382,14 @@ async function cargarOperadores(transmisionId) {
     const cargarBtn = document.getElementById('cargarBtn');
     const operadorCount = document.getElementById('operadorCount');
     const ultimaActualizacion = document.getElementById('ultimaActualizacion').querySelector('span');
+    const buscadorInput = document.getElementById('buscadorInput');
+    
+    // Limpiar buscador
+    if (buscadorInput) {
+        buscadorInput.value = '';
+        const limpiarBtn = document.getElementById('limpiarBusqueda');
+        if (limpiarBtn) limpiarBtn.style.display = 'none';
+    }
     
     // Mostrar loader
     tableBody.innerHTML = `
@@ -383,6 +417,9 @@ async function cargarOperadores(transmisionId) {
         if (!response.ok) throw new Error('Error al cargar operadores');
         
         const operadores = await response.json();
+
+        // Guardar datos originales
+        datosOriginales = operadores;
         
         if (!operadores || operadores.length === 0) {
             tableBody.innerHTML = `
@@ -397,109 +434,14 @@ async function cargarOperadores(transmisionId) {
             `;
             statsContainer.style.display = 'none';
             operadorCount.textContent = '(0 operadores)';
+            actualizarContadorResultados(0, 0);
             return;
         }
         
-        // Mostrar stats
-        statsContainer.style.display = 'grid';
+        renderizarTablaConDatos(operadores);
+        actualizarContadorResultados(operadores.length, operadores.length);
         
-        // Renderizar filas
-        let rows = '';
-        let totalTransmitidos = 0;
-        let totalEnviadoNoRevisado = 0;
-        let totalSinEnviar = 0;
-        let totalRevisadoRechazado = 0;
-        
-        operadores.forEach(op => {
-            // Contar estados para estadísticas
-            if (op.actas && Array.isArray(op.actas)) {
-                op.actas.forEach(acta => {
-                    switch(acta.estado) {
-                        case 'TRANSMITIDO':
-                            totalTransmitidos++;
-                            break;
-                        case 'ENVIADO_NO_REVISADO':
-                            totalEnviadoNoRevisado++;
-                            break;
-                        case 'SIN_ENVIAR':
-                            totalSinEnviar++;
-                            break;
-                        case 'REVISADO_RECHAZADO':
-                            totalRevisadoRechazado++;
-                            break;
-                    }
-                });
-            }
-            
-            const nombreCompleto = `${op.nombre || ''} ${op.apellido_paterno || ''} ${op.apellido_materno || ''}`.trim() || 'N/A';
-            
-            let actasHtml = '<div class="actas-container">';
-            if (op.actas && op.actas.length > 0) {
-                const actasOrdenadas = ordenarActasPorNumero(op.actas);
-                
 
-                actasOrdenadas.forEach(acta => {
-                    const actaClass = getActaClass(acta.estado);
-                    const tieneObs = acta.observacion && acta.observacion.trim() !== '';
-                    const tooltip = getActaTooltip(acta);
-                    actasHtml += `<div class="acta-wrapper">  
-                                    <div 
-                                        class="acta-box ${actaClass}" 
-                                        data-tooltip="${tooltip}" 
-                                        title="${tooltip}
-                                        data-acta-id="${acta.id}"
-                                        onclick="abrirEstadoModal('${acta.id}', '${nombreCompleto}', '${op.recinto?.nombre || ''}', '${acta.numero}', '${acta.estado}')"
-                                    ">
-                                            ${acta.numero}
-                                    </div>
-                                    <div class="acta-footer">
-                                        <button 
-                                            class="obs-btn ${tieneObs ? 'has-obs' : ''}"
-                                            onclick="abrirModal('${acta.id}', '${op.nombre} ${op.apellido_paterno || ''}', '${acta.numero}', '${acta.estado}', '${acta.observacion || ''}')"
-                                            title="${tieneObs ? 'Ver observación' : 'Agregar observación'}"
-                                            data-acta-id="${acta.id}"
-                                        >
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        </button>
-                                    </div>
-                                  </div>`;
-                                  
-                });
-            } else {
-                actasHtml += '<span style="color: #9e9e9e; font-size: 12px;">Sin actas</span>';
-            }
-            actasHtml += '</div>';
-            
-            rows += `
-                <tr>
-                    <td><strong>${nombreCompleto}</strong></td>
-                    <td>${op.ci || 'N/A'}</td>
-                    <td>${op.celular || 'N/A'}</td>
-                    <td>
-                        <div class="recinto-info">
-                            <span class="recinto-nombre">${op.recinto?.nombre || 'N/A'}</span>
-                        </div>
-                    </td>
-                    <td>${actasHtml}</td>
-                </tr>
-            `;
-        });
-        
-        tableBody.innerHTML = rows;
-        
-        // Actualizar estadísticas
-        document.getElementById('totalTransmitidos').textContent = totalTransmitidos;
-        document.getElementById('totalEnviadoNoRevisado').textContent = totalEnviadoNoRevisado;
-        document.getElementById('totalSinEnviar').textContent = totalSinEnviar;
-        document.getElementById('totalRevisadoRechazado').textContent = totalRevisadoRechazado;
-        
-        // Actualizar contador de operadores
-        operadorCount.textContent = `(${operadores.length} operadores)`;
-        
-        // Actualizar hora de última actualización
-        const ahora = new Date();
-        ultimaActualizacion.textContent = ahora.toLocaleTimeString();
-        
     } catch (error) {
         console.error('Error:', error);
         tableBody.innerHTML = `
@@ -860,5 +802,258 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Función para inicializar el buscador
+function inicializarBuscador() {
+    const buscadorInput = document.getElementById('buscadorInput');
+    const limpiarBtn = document.getElementById('limpiarBusqueda');
+    
+    if (!buscadorInput) return;
+    
+    // Evento de búsqueda con debounce
+    buscadorInput.addEventListener('input', function(e) {
+        const termino = e.target.value;
+        
+        // Mostrar/ocultar botón de limpiar
+        if (limpiarBtn) {
+            limpiarBtn.style.display = termino.length > 0 ? 'block' : 'none';
+        }
+        
+        // Debounce para evitar búsquedas constantes
+        if (timeoutBusqueda) clearTimeout(timeoutBusqueda);
+        
+        timeoutBusqueda = setTimeout(() => {
+            filtrarTabla(termino);
+        }, 300);
+    });
+    
+    // Evento para limpiar búsqueda
+    if (limpiarBtn) {
+        limpiarBtn.addEventListener('click', function() {
+            buscadorInput.value = '';
+            this.style.display = 'none';
+            filtrarTabla('');
+        });
+    }
+}
+
+// Función para filtrar la tabla
+function filtrarTabla(termino) {
+    if (!datosOriginales || datosOriginales.length === 0) {
+        return;
+    }
+    
+    const terminoBusqueda = termino.toLowerCase().trim();
+    
+    if (terminoBusqueda === '') {
+        // Mostrar todos los datos originales
+        renderizarTablaConDatos(datosOriginales);
+        actualizarContadorResultados(datosOriginales.length, datosOriginales.length);
+        return;
+    }
+    
+    // Filtrar datos
+    const resultados = datosOriginales.filter(operador => {
+        // Buscar en campos del operador
+        const nombreCompleto = `${operador.nombre || ''} ${operador.apellido_paterno || ''} ${operador.apellido_materno || ''}`.toLowerCase();
+        const ci = (operador.ci || '').toLowerCase();
+        const celular = (operador.celular || '').toLowerCase();
+        const recinto = (operador.recinto?.nombre || '').toLowerCase();
+        
+        // Buscar en actas (números)
+        const actasCoinciden = operador.actas?.some(acta => {
+            return (acta.numero || '').toLowerCase().includes(terminoBusqueda);
+        });
+        
+        // Verificar si algún campo coincide
+        return nombreCompleto.includes(terminoBusqueda) ||
+               ci.includes(terminoBusqueda) ||
+               celular.includes(terminoBusqueda) ||
+               recinto.includes(terminoBusqueda) ||
+               actasCoinciden;
+    });
+    
+    // Renderizar resultados filtrados
+    renderizarTablaConDatos(resultados, terminoBusqueda);
+    actualizarContadorResultados(resultados.length, datosOriginales.length);
+}
+
+// Función para renderizar la tabla con los datos
+function renderizarTablaConDatos(operadores, terminoDestacado = '') {
+    const tableBody = document.getElementById('tableBody');
+    const statsContainer = document.getElementById('statsContainer');
+    const operadorCount = document.getElementById('operadorCount');
+    const ultimaActualizacion = document.getElementById('ultimaActualizacion').querySelector('span');
+    
+    if (!operadores || operadores.length === 0) {
+        tableBody.innerHTML = `
+             <tr>
+                <td colspan="5">
+                    <div class="no-data">
+                        <i class="fas fa-search"></i>
+                        <p>No se encontraron resultados para tu búsqueda</p>
+                    </div>
+                 </td>
+             </tr>
+        `;
+        statsContainer.style.display = 'none';
+        operadorCount.textContent = '(0 operadores)';
+        return;
+    }
+    
+    statsContainer.style.display = 'grid';
+    
+    let rows = '';
+    let totalTransmitidos = 0;
+    let totalEnviadoNoRevisado = 0;
+    let totalSinEnviar = 0;
+    let totalRevisadoRechazado = 0;
+    
+    operadores.forEach(op => {
+        // Contar estados para estadísticas
+        if (op.actas && Array.isArray(op.actas)) {
+            op.actas.forEach(acta => {
+                switch(acta.estado) {
+                    case 'TRANSMITIDO':
+                        totalTransmitidos++;
+                        break;
+                    case 'ENVIADO_NO_REVISADO':
+                        totalEnviadoNoRevisado++;
+                        break;
+                    case 'SIN_ENVIAR':
+                        totalSinEnviar++;
+                        break;
+                    case 'REVISADO_RECHAZADO':
+                        totalRevisadoRechazado++;
+                        break;
+                }
+            });
+        }
+        
+        const nombreCompleto = `${op.nombre || ''} ${op.apellido_paterno || ''} ${op.apellido_materno || ''}`.trim() || 'N/A';
+        
+        // Resaltar texto si hay término de búsqueda
+        const nombreResaltado = terminoDestacado ? resaltarTexto(nombreCompleto, terminoDestacado) : nombreCompleto;
+        const ciResaltado = terminoDestacado ? resaltarTexto(op.ci || 'N/A', terminoDestacado) : (op.ci || 'N/A');
+        const celularResaltado = terminoDestacado ? resaltarTexto(op.celular || 'N/A', terminoDestacado) : (op.celular || 'N/A');
+        const recintoResaltado = terminoDestacado ? resaltarTexto(op.recinto?.nombre || 'N/A', terminoDestacado) : (op.recinto?.nombre || 'N/A');
+        
+        rows += `
+            <tr>
+                <td><strong>${nombreResaltado}</strong></td>
+                <td>${ciResaltado}</td>
+                <td>${celularResaltado}</td>
+                <td>
+                    <div class="recinto-info">
+                        <span class="recinto-nombre">${recintoResaltado}</span>
+                    </div>
+                </td>
+                <td>${renderizarActasConEventos(op, op.actas, terminoDestacado)}</td>
+            </tr>
+        `;
+    });
+    
+    tableBody.innerHTML = rows;
+    
+    // Actualizar estadísticas
+    document.getElementById('totalTransmitidos').textContent = totalTransmitidos;
+    document.getElementById('totalEnviadoNoRevisado').textContent = totalEnviadoNoRevisado;
+    document.getElementById('totalSinEnviar').textContent = totalSinEnviar;
+    document.getElementById('totalRevisadoRechazado').textContent = totalRevisadoRechazado;
+    
+    operadorCount.textContent = `(${operadores.length} operadores)`;
+    
+    // Actualizar hora de última actualización
+    const ahora = new Date();
+    if (ultimaActualizacion) {
+        ultimaActualizacion.textContent = `Última actualización ${ahora.toLocaleTimeString()}`;
+    }
+}
+
+// Función para resaltar texto
+function resaltarTexto(texto, termino) {
+    if (!termino || !texto) return texto;
+    
+    const regex = new RegExp(`(${escapeRegex(termino)})`, 'gi');
+    return texto.replace(regex, '<span class="resultado-destacado">$1</span>');
+}
+
+// Función para escapar caracteres especiales en regex
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Función para actualizar el contador de resultados
+function actualizarContadorResultados(mostrados, total) {
+    const resultadosSpan = document.getElementById('resultadosCount');
+    if (resultadosSpan) {
+        if (mostrados === total) {
+            resultadosSpan.innerHTML = `<i class="fas fa-users"></i> Mostrando ${mostrados} operadores`;
+        } else {
+            resultadosSpan.innerHTML = `<i class="fas fa-search"></i> Mostrando ${mostrados} de ${total} operadores`;
+        }
+    }
+}
+
+// Modificar la función renderizarActasConEventos para soportar resaltado
+function renderizarActasConEventos(operador, actas, terminoDestacado = '') {
+    let html = '<div class="actas-container">';
+    
+    if (actas && actas.length > 0) {
+        // Ordenar actas por número
+        const actasOrdenadas = [...actas].sort((a, b) => {
+            return (parseInt(a.numero) || 0) - (parseInt(b.numero) || 0);
+        });
+        
+        actasOrdenadas.forEach(acta => {
+            const actaClass = getActaClass(acta.estado);
+            const tooltip = getActaTooltip(acta);
+            const tieneObs = acta.observacion && acta.observacion.trim() !== '';
+            const nombreCompleto = `${operador.nombre || ''} ${operador.apellido_paterno || ''}`.trim();
+            
+            // Resaltar número de acta si coincide con la búsqueda
+            let numeroActa = acta.numero;
+            if (terminoDestacado && numeroActa && numeroActa.toLowerCase().includes(terminoDestacado.toLowerCase())) {
+                numeroActa = resaltarTexto(numeroActa, terminoDestacado);
+            }
+            
+            html += `
+                <div class="acta-wrapper">
+                    <div 
+                        class="acta-box ${actaClass}" 
+                        data-tooltip="${tooltip}" 
+                        title="${tooltip}"
+                        data-acta-id="${acta.id}"
+                        onclick="abrirEstadoModal('${acta.id}', '${nombreCompleto}', '${operador.recinto?.nombre || ''}', '${acta.numero}', '${acta.estado}')"
+                    >
+                        ${numeroActa}
+                    </div>
+                    <div class="acta-footer">
+                        <button 
+                            class="obs-btn ${tieneObs ? 'has-obs' : ''}"
+                            onclick="event.stopPropagation(); abrirModal('${acta.id}', '${nombreCompleto}', '${acta.numero}', '${acta.estado}', '${acta.observacion || ''}')"
+                            title="${tieneObs ? 'Ver observación' : 'Agregar observación'}"
+                            data-acta-id="${acta.id}"
+                        >
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        html += '<span style="color: #9e9e9e; font-size: 12px;">Sin actas</span>';
+    }
+    
+    html += '</div>';
+    return html;
+}
+
+// Inicializar buscador al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarBuscador();
+    loadUserData();
+    cargarTransmisiones();
+});
 
 </script>

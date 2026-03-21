@@ -1,0 +1,425 @@
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Tarjetas de estadísticas - 3 columnas */
+        .stats-grid {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 35px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        /* Porcentajes de ancho */
+        .stat-card:nth-child(1) {
+            flex: 0 0 calc(30% - 17px);
+        }
+        .stat-card:nth-child(2) {
+            flex: 0 0 calc(30% - 17px);
+        }
+        .stat-card:nth-child(3) {
+            flex: 0 0 calc(40% - 17px);
+        }
+
+        /* Decoración de fondo */
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            opacity: 0.1;
+        }
+
+        .stat-card:nth-child(1)::before {
+            background: #4caf50;
+        }
+        .stat-card:nth-child(2)::before {
+            background: #ff9800;
+        }
+        .stat-card:nth-child(3)::before {
+            background: #2196f3;
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon i {
+            font-size: 28px;
+        }
+
+        .stat-card:nth-child(1) .stat-icon {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            color: #4caf50;
+        }
+        .stat-card:nth-child(2) .stat-icon {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            color: #ff9800;
+        }
+        .stat-card:nth-child(3) .stat-icon {
+            background: linear-gradient(135deg, #e3f2fd, #bbdef5);
+            color: #2196f3;
+        }
+
+        .stat-badge {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-weight: 500;
+        }
+
+        .stat-card:nth-child(1) .stat-badge {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+        .stat-card:nth-child(2) .stat-badge {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+        .stat-card:nth-child(3) .stat-badge {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+
+        .stat-value {
+            font-size: 42px;
+            font-weight: 800;
+            margin: 15px 0 5px;
+        }
+
+        .stat-card:nth-child(1) .stat-value {
+            color: #4caf50;
+        }
+        .stat-card:nth-child(2) .stat-value {
+            color: #ff9800;
+        }
+        .stat-card:nth-child(3) .stat-value {
+            color: #2196f3;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #757575;
+            font-weight: 500;
+        }
+
+        /* Gráfico de recintos dentro de la tarjeta */
+        .grafico-wrapper {
+            margin-top: 10px;
+        }
+
+        .grafico-item {
+            margin-bottom: 20px;
+        }
+
+        .grafico-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .grafico-nombre {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .grafico-nombre i {
+            font-size: 14px;
+        }
+
+        .grafico-porcentaje {
+            color: #757575;
+        }
+
+        .grafico-barra {
+            background: #f0f0f0;
+            height: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .grafico-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .fill-urbanos {
+            background: linear-gradient(90deg, #2196f3, #64b5f6);
+        }
+        .fill-rurales {
+            background: linear-gradient(90deg, #ff9800, #ffb74d);
+        }
+
+        .grafico-valor {
+            text-align: right;
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .grafico-valor span {
+            font-size: 14px;
+            font-weight: normal;
+            color: #757575;
+        }
+
+        /* Secciones de transmisiones y actividades */
+        .seccion-cards {
+            margin-bottom: 30px;
+        }
+
+        .seccion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .seccion-header h3 {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .seccion-header h3 i {
+            font-size: 20px;
+        }
+
+        .seccion-header h3:first-of-type {
+            color: #2e7d32;
+        }
+
+        .seccion-header h3:first-of-type i {
+            color: #4caf50;
+        }
+
+        .seccion-header h3:last-of-type {
+            color: #f57c00;
+        }
+
+        .seccion-header h3:last-of-type i {
+            color: #ff9800;
+        }
+
+        .badge-count {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .cards-container {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 5px 0 15px 0;
+            scrollbar-width: thin;
+        }
+
+        .cards-container::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .cards-container::-webkit-scrollbar-track {
+            background: #e8f5e9;
+            border-radius: 10px;
+        }
+
+        .cards-container::-webkit-scrollbar-thumb {
+            background: #81c784;
+            border-radius: 10px;
+        }
+
+        /* Tarjetas de transmisiones */
+        .info-card-transmision {
+            background: linear-gradient(135deg, #ffffff, #f8fff8);
+            border-radius: 16px;
+            padding: 20px;
+            min-width: 280px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            border-left: 4px solid #4caf50;
+        }
+
+        .info-card-transmision:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.15);
+        }
+
+        .info-card-transmision .card-icon {
+            width: 40px;
+            height: 40px;
+            background: #e8f5e9;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .info-card-transmision .card-icon i {
+            font-size: 20px;
+            color: #4caf50;
+        }
+
+        .info-card-transmision .card-descripcion {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 12px;
+        }
+
+        /* Tarjetas de actividades */
+        .info-card-actividad {
+            background: linear-gradient(135deg, #ffffff, #fffaf5);
+            border-radius: 16px;
+            padding: 20px;
+            min-width: 280px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            border-left: 4px solid #ff9800;
+        }
+
+        .info-card-actividad:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 152, 0, 0.15);
+        }
+
+        .info-card-actividad .card-icon {
+            width: 40px;
+            height: 40px;
+            background: #fff3e0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .info-card-actividad .card-icon i {
+            font-size: 20px;
+            color: #ff9800;
+        }
+
+        .info-card-actividad .card-descripcion {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f57c00;
+            margin-bottom: 12px;
+        }
+
+        .card-fecha, .card-hora {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #757575;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        .card-fecha i, .card-hora i {
+            width: 16px;
+            color: #bdbdbd;
+        }
+
+        .empty-message {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            color: #757575;
+            min-width: 100%;
+        }
+
+        .empty-message i {
+            font-size: 48px;
+            color: #e0e0e0;
+            margin-bottom: 15px;
+        }
+
+        .loader-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+            min-width: 100%;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4caf50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1024px) {
+            .stat-card:nth-child(1),
+            .stat-card:nth-child(2),
+            .stat-card:nth-child(3) {
+                flex: 0 0 calc(100% - 0px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 20px;
+            }
+        }
