@@ -31,13 +31,46 @@
             <!-- Tarjetas de estados -->
             <div class="stats-grid" id="statsGrid"></div>
 
-            <!-- Gráfico de torta -->
-            <div class="chart-container">
-                <div class="chart-header">
-                    <div class="total-actas" id="totalActas">0</div>
-                    <div class="total-label">Total de Actas</div>
+            <!-- Contenedor de gráficos - 3 columnas -->
+            <div class="charts-row">
+                <!-- Gráfico Departamental (izquierda) -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="fas fa-building"></i>
+                            <h3>Departamental</h3>
+                        </div>
+                        <div class="total-actas-small" id="totalDepartamental">0</div>
+                        <div class="total-label-small">Total de Actas</div>
+                    </div>
+                    <canvas id="departamentalChart"></canvas>
                 </div>
-                <canvas id="pieChart"></canvas>
+
+                <!-- Gráfico General (centro) -->
+                <div class="chart-card principal">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-pie"></i>
+                            <h3>General</h3>
+                        </div>
+                        <div class="total-actas" id="totalGeneral">0</div>
+                        <div class="total-label">Total de Actas</div>
+                    </div>
+                    <canvas id="generalChart"></canvas>
+                </div>
+
+                <!-- Gráfico Municipal (derecha) -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="fas fa-city"></i>
+                            <h3>Municipal</h3>
+                        </div>
+                        <div class="total-actas-small" id="totalMunicipal">0</div>
+                        <div class="total-label-small">Total de Actas</div>
+                    </div>
+                    <canvas id="municipalChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -50,6 +83,10 @@
 
 
 <script>
+
+let generalChart = null;
+let departamentalChart = null;
+let municipalChart = null;
 
 let pieChart = null;
 let refreshInterval = null;
@@ -149,7 +186,9 @@ async function cargarEstadisticas() {
         actualizarTarjetas(data);
         
         // Actualizar gráfico
-        actualizarGrafico(data);
+        actualizarGraficoGeneral(data.general);
+        actualizarGraficoDepartamental(data.departamentales);
+        actualizarGraficoMunicipal(data.municipales);
         
         // Iniciar actualización en tiempo real (cada 30 segundos)
         iniciarActualizacionTiempoReal();
@@ -171,8 +210,8 @@ async function cargarEstadisticas() {
 // Actualizar tarjetas de estados
 function actualizarTarjetas(data) {
     const statsGrid = document.getElementById('statsGrid');
-    const conteo = data.conteo || {};
-    const porcentajes = data.porcentajes || {};
+    const conteo = data.general.conteo || {};
+    const porcentajes = data.general.porcentajes || {};
     
     const estados = [
         { key: 'TRANSMITIDO', nombre: 'Transmitido', icono: 'fa-paper-plane', color: '#2196f3', bg: '#e3f2fd' },
@@ -196,15 +235,13 @@ function actualizarTarjetas(data) {
                 </div>
                 <div class="stat-value">${cantidad.toLocaleString()}</div>
                 <div class="stat-label">${estado.nombre}</div>
-                <div class="stat-percentage">${Math.round(porcentaje)}% del total</div>
             </div>
         `;
     });
     
     statsGrid.innerHTML = html;
-    
     // Actualizar total de actas
-    document.getElementById('totalActas').textContent = (data.total || 0).toLocaleString();
+    document.getElementById('totalGeneral').textContent = (data.general.total || 0).toLocaleString();
 }
 
 function getCardClass(estado) {
@@ -217,9 +254,9 @@ function getCardClass(estado) {
     }
 }
 
-// Actualizar gráfico de torta
-function actualizarGrafico(data) {
-    const ctx = document.getElementById('pieChart').getContext('2d');
+// Actualizar gráfico de torta general
+function actualizarGraficoGeneral(data) {
+    const ctx = document.getElementById('generalChart').getContext('2d');
     const conteo = data.conteo || {};
     const porcentajes = data.porcentajes || {};
     
@@ -282,6 +319,258 @@ function actualizarGrafico(data) {
         });
     }
 }
+
+// Actualizar gráfico de torta departamental
+function actualizarGraficoGeneral(data) {
+    const ctx = document.getElementById('departamentalChart').getContext('2d');
+    const conteo = data.conteo || {};
+    const porcentajes = data.porcentajes || {};
+    
+    const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
+    const values = [
+        conteo['TRANSMITIDO'] || 0,
+        conteo['ENVIADO_NO_REVISADO'] || 0,
+        conteo['SIN_ENVIAR'] || 0,
+        conteo['REVISADO_RECHAZADO'] || 0
+    ];
+    const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
+    
+    if (pieChart) {
+        pieChart.data.datasets[0].data = values;
+        pieChart.data.datasets[0].backgroundColor = backgroundColors;
+        pieChart.update();
+    } else {
+        pieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 12
+                            },
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = data.total || 0;
+                                const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
+                            }
+                        }
+                    }
+                },
+                layout: {
+                    padding: 20
+                }
+            }
+        });
+    }
+}
+
+// Actualizar gráfico General
+function actualizarGraficoGeneral(data) {
+    const ctx = document.getElementById('generalChart').getContext('2d');
+    const conteo = data?.conteo || {};
+    const total = data?.total || 0;
+    
+    const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
+    const values = [
+        conteo['TRANSMITIDO'] || 0,
+        conteo['ENVIADO_NO_REVISADO'] || 0,
+        conteo['SIN_ENVIAR'] || 0,
+        conteo['REVISADO_RECHAZADO'] || 0
+    ];
+    const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
+    
+    document.getElementById('totalGeneral').textContent = total.toLocaleString();
+    
+    if (generalChart) {
+        generalChart.data.datasets[0].data = values;
+        generalChart.update();
+    } else {
+        generalChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 11 },
+                            padding: 10,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Actualizar gráfico Departamental
+function actualizarGraficoDepartamental(data) {
+    const ctx = document.getElementById('departamentalChart').getContext('2d');
+    const conteo = data?.conteo || {};
+    const total = data?.total || 0;
+    
+    const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
+    const values = [
+        conteo['TRANSMITIDO'] || 0,
+        conteo['ENVIADO_NO_REVISADO'] || 0,
+        conteo['SIN_ENVIAR'] || 0,
+        conteo['REVISADO_RECHAZADO'] || 0
+    ];
+    const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
+    
+    document.getElementById('totalDepartamental').textContent = total.toLocaleString();
+    
+    if (departamentalChart) {
+        departamentalChart.data.datasets[0].data = values;
+        departamentalChart.update();
+    } else {
+        departamentalChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 10 },
+                            padding: 8,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 8
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Actualizar gráfico Municipal
+function actualizarGraficoMunicipal(data) {
+    const ctx = document.getElementById('municipalChart').getContext('2d');
+    const conteo = data?.conteo || {};
+    const total = data?.total || 0;
+    
+    const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
+    const values = [
+        conteo['TRANSMITIDO'] || 0,
+        conteo['ENVIADO_NO_REVISADO'] || 0,
+        conteo['SIN_ENVIAR'] || 0,
+        conteo['REVISADO_RECHAZADO'] || 0
+    ];
+    const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
+    
+    document.getElementById('totalMunicipal').textContent = total.toLocaleString();
+    
+    if (municipalChart) {
+        municipalChart.data.datasets[0].data = values;
+        municipalChart.update();
+    } else {
+        municipalChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 10 },
+                            padding: 8,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 8
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
 
 // Iniciar actualización en tiempo real (cada 30 segundos)
 function iniciarActualizacionTiempoReal() {

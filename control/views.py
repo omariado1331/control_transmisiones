@@ -312,32 +312,25 @@ def api_admin_inicio(request):
 
     return JsonResponse(data)
 
-@login_required
-def api_estadisticas_actas(request, transmision_id):
+def calcular_estadisticas(qs):
 
-    qs = ReporteTransmision.objects.filter(
-        transmision_id=transmision_id
-    )
-
-    conteo_qs = qs.values("estado").annotate(total=Count("id"))
-
-    # estructura base
-    conteo = {
+    base = {
         "TRANSMITIDO": 0,
         "REVISADO_RECHAZADO": 0,
         "ENVIADO_NO_REVISADO": 0,
         "SIN_ENVIAR": 0
     }
 
+    conteo_qs = qs.values("estado").annotate(total=Count("id"))
+
     for item in conteo_qs:
-        conteo[item["estado"]] = item["total"]
+        base[item["estado"]] = item["total"]
 
-    total = sum(conteo.values())
+    total = sum(base.values())
 
-    # calcular porcentajes
     porcentajes = {}
 
-    for estado, cantidad in conteo.items():
+    for estado, cantidad in base.items():
         if total > 0:
             porcentaje = (cantidad / total) * 100
         else:
@@ -345,10 +338,41 @@ def api_estadisticas_actas(request, transmision_id):
 
         porcentajes[estado] = round(porcentaje, 2)
 
-    data = {
+    return {
         "total": total,
-        "conteo": conteo,
+        "conteo": base,
         "porcentajes": porcentajes
+    }
+
+@login_required
+def api_estadisticas_actas(request, transmision_id):
+
+    base_qs = ReporteTransmision.objects.filter(
+        transmision_id=transmision_id
+    ).select_related("acta")
+
+    # general
+    general = calcular_estadisticas(base_qs)
+
+    #departamentales
+
+    departamentales_qs = base_qs.filter(
+        acta__numero__endswith="1"
+    )
+    departamentales = calcular_estadisticas(departamentales_qs)
+
+    #municipales
+
+    municipales_qs = base_qs.filter(
+        acta__numero__endswith="7"
+    )
+    municipales = calcular_estadisticas(municipales_qs)
+
+
+    data = {
+        "general": general,
+        "municipales": municipales,
+        "departamentales": departamentales
     }
 
     return JsonResponse(data)
