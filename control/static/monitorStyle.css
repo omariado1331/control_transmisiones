@@ -312,10 +312,10 @@
         }
 
         /* Estados de actas */
-        .acta-transmitido { background: #2196f3; }      /* Azul - Transmitido */
-        .acta-sin-enviar { background: #ff9800; }      /* Naranja - Sin enviar */
-        .acta-revisado-rechazado { background: #f44336; } /* Rojo - Revisado rechazado */
-        .acta-enviado-no-revisado { background: #4caf50; } /* Verde - Enviado no revisado */
+        .acta-transmitido { background: #83d302; }      /* Azul - Transmitido */
+        .acta-sin-enviar { background: #ff0000; }      /* Naranja - Sin enviar */
+        .acta-revisado-rechazado { background: #2a93da; } /* Rojo - Revisado rechazado */
+        .acta-enviado-no-revisado { background: #686d68; } /* Verde - Enviado no revisado */
 
         /* Loader */
         .loader-container {
