@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'control.middleware.NoCacheMiddleware',
 ]
 
 ROOT_URLCONF = 'control_transmisiones.urls'
