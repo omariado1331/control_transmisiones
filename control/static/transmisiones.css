@@ -390,3 +390,229 @@ canvas {
         transform: scale(1) translateY(-5px);
     }
 }
+
+/* Contenedor de monitores */
+.monitores-container {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-top: 35px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.monitores-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e8f5e9;
+}
+
+.monitores-header h3 {
+    color: #2e7d32;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.monitores-header h3 i {
+    font-size: 20px;
+}
+
+.monitores-selector-wrapper {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.monitores-selector-wrapper .selector-group {
+    flex: 1;
+    min-width: 50px;
+}
+
+.monitores-selector-wrapper .selector-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2e7d32;
+    margin-bottom: 8px;
+}
+
+.monitores-selector-wrapper .selector-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e8f5e9;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #2e7d32;
+    background: white;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.monitores-selector-wrapper .selector-group select:hover,
+.monitores-selector-wrapper .selector-group select:focus {
+    border-color: #81c784;
+    box-shadow: 0 0 0 3px rgba(129, 199, 132, 0.2);
+}
+
+@media (max-width: 768px) {
+    .monitor-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .monitores-selector-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* Sección de actas del monitor */
+.monitor-actas-section {
+    margin-top: 0px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.monitor-actas-section h4 {
+    color: #2e7d32;
+    font-size: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.monitor-actas-container {
+    background: #fafafa;
+    border-radius: 15px;
+    padding: 20px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* Agrupación por operador */
+.operador-group {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.operador-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e8f5e9;
+}
+
+.operador-nombre {
+    font-weight: 600;
+    color: #2e7d32;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.operador-nombre i {
+    color: #4caf50;
+}
+
+.operador-recinto {
+    font-size: 13px;
+    color: #757575;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.operador-actas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Cuadros de actas */
+.monitor-acta-box {
+    min-width: 70px;
+    width: 70px;
+    height: 45px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    position: relative;
+    background-size: cover;
+}
+
+.monitor-acta-box:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Tooltip personalizado para el hover */
+.monitor-acta-box[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2e7d32;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-weight: normal;
+}
+
+/* Colores según estado */
+.monitor-acta-transmitido { background: #2196f3; } /* Azul */
+.monitor-acta-enviado-no-revisado { background: #4caf50; } /* Verde */
+.monitor-acta-sin-enviar { background: #ff9800; } /* Naranja */
+.monitor-acta-revisado-rechazado { background: #f44336; } /* Rojo */
+
+.monitor-actas-empty {
+    text-align: center;
+    padding: 40px;
+    color: #757575;
+}
+
+.monitor-actas-empty i {
+    font-size: 48px;
+    color: #e0e0e0;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+    .monitor-acta-box {
+        min-width: 55px;
+        width: 55px;
+        height: 38px;
+        font-size: 10px;
+    }
+    
+    .operador-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}

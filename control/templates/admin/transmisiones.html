@@ -81,6 +81,32 @@
         </div>
     </div>
 
+    <!-- Selector de Monitores -->
+    <div class="monitores-container">
+        <div class="monitores-header">
+            <h3><i class="fas fa-users"></i> Monitores</h3>
+            <span class="badge-count" id="monitoresCount">0</span>
+        </div>
+        
+        <div class="monitores-selector-wrapper">
+            <div class="selector-group">
+                <label><i class="fas fa-user-check"></i> Seleccionar Monitor</label>
+                <select id="monitorSelect">
+                    <option value="">-- Cargando monitores --</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Resultados del monitor (se mostrarán después de cargar) -->
+        <div id="monitorResultados" style="display: none;">            
+            <!-- Sección de actas del monitor -->
+            <div class="monitor-actas-section">
+                <h4><i class="fas fa-file-alt"></i> Actas del Monitor</h4>
+                <div id="monitorActasContainer" class="monitor-actas-container"></div>
+            </div>
+        </div>
+
+    </div>
 
 <script>
 
@@ -219,7 +245,7 @@ function actualizarTarjetas(data) {
         { key: 'SIN_ENVIAR', nombre: 'Sin enviar', icono: 'fa-hourglass', color: '#ff9800', bg: '#fff3e0' },
         { key: 'REVISADO_RECHAZADO', nombre: 'Revisado rechazado', icono: 'fa-times-circle', color: '#f44336', bg: '#ffebee' }
     ];
-    
+
     let html = '';
     estados.forEach(estado => {
         const cantidad = conteo[estado.key] || 0;
@@ -439,6 +465,222 @@ function actualizarGraficoMunicipal(data) {
     }
 }
 
+// Inicializar selector de monitores con evento change
+function inicializarMonitores() {
+    cargarMonitores();
+    
+    // Agregar evento change al select
+    const monitorSelect = document.getElementById('monitorSelect');
+    monitorSelect.addEventListener('change', (e) => {
+        const monitorId = e.target.value;
+        if (monitorId) {
+            cargarEstadisticasPorMonitor(monitorId);
+        } else {
+            document.getElementById('monitorResultados').style.display = 'none';
+        }
+    });
+}
+// Función para obtener la clase CSS según el estado
+function getMonitorActaClass(estado) {
+    const estados = {
+        'TRANSMITIDO': 'monitor-acta-transmitido',
+        'ENVIADO_NO_REVISADO': 'monitor-acta-enviado-no-revisado',
+        'SIN_ENVIAR': 'monitor-acta-sin-enviar',
+        'REVISADO_RECHAZADO': 'monitor-acta-revisado-rechazado'
+    };
+    return estados[estado] || 'monitor-acta-sin-enviar';
+}
+
+// Función para obtener el nombre del estado
+function getEstadoNombre(estado) {
+    const estados = {
+        'TRANSMITIDO': 'Transmitido',
+        'ENVIADO_NO_REVISADO': 'Enviado no revisado',
+        'SIN_ENVIAR': 'Sin enviar',
+        'REVISADO_RECHAZADO': 'Revisado rechazado'
+    };
+    return estados[estado] || estado;
+}
+
+// Función para cargar estadísticas cuando se selecciona un monitor
+async function cargarEstadisticasPorMonitor(monitorId) {
+    const monitorResultados = document.getElementById('monitorResultados');
+    const monitorSelect = document.getElementById('monitorSelect');
+    
+    if (!monitorId) {
+        monitorResultados.style.display = 'none';
+        return;
+    }
+    
+    if (!currentReporteId) {
+        console.error('No hay transmisión seleccionada');
+        return;
+    }
+    
+    // Mostrar loader
+    monitorResultados.style.display = 'block';
+    monitorResultados.innerHTML = `
+        <div class="loader-container">
+            <div class="loader"></div>
+            <p style="margin-top: 15px;">Cargando datos del monitor...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/monitor/${monitorId}/transmision/${currentReporteId}/actas/`, {
+            headers: { 'X-CSRFToken': getCSRFToken() }
+        });
+        
+        if (!response.ok) throw new Error('Error al cargar estadísticas');
+        
+        const operadores = await response.json();
+        
+        // Reconstruir el HTML de resultados
+        monitorResultados.innerHTML = `
+            <div class="monitor-actas-section">
+                <h4><i class="fas fa-file-alt"></i> Actas del Monitor</h4>
+                <div id="monitorActasContainer" class="monitor-actas-container"></div>
+            </div>
+        `;
+        
+        // Renderizar actas del monitor
+        renderizarActasMonitor(operadores);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        monitorResultados.innerHTML = `
+            <div class="no-data">
+                <i class="fas fa-exclamation-triangle" style="color: #f44336;"></i>
+                <p>Error al cargar los datos del monitor</p>
+            </div>
+        `;
+    }
+}
+
+// Función para renderizar las actas del monitor
+function renderizarActasMonitor(operadores) {
+    const container = document.getElementById('monitorActasContainer');
+    
+    if (!operadores || operadores.length === 0) {
+        container.innerHTML = `
+            <div class="monitor-actas-empty">
+                <i class="fas fa-file-alt"></i>
+                <p>No hay actas asignadas a este monitor</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    operadores.forEach(operador => {
+        const nombreCompleto = `${operador.nombre} ${operador.apellido_paterno || ''} ${operador.apellido_materno || ''}` || 'Sin nombre';
+        const recintoNombre = operador.recinto?.nombre || 'Sin recinto';
+        
+        html += `
+            <div class="operador-group">
+                <div class="operador-header">
+                    <div class="operador-nombre">
+                        <i class="fas fa-user-circle"></i>
+                        ${escapeHtml(nombreCompleto)}
+                    </div>
+                    <div class="operador-recinto">
+                        <i class="fas fa-building"></i>
+                        ${escapeHtml(recintoNombre)}
+                    </div>
+                </div>
+                <div class="operador-actas">
+        `;
+        
+        if (operador.actas && operador.actas.length > 0) {
+            // Ordenar actas por número
+            const actasOrdenadas = [...operador.actas].sort((a, b) => {
+                return (parseInt(a.acta_numero) || 0) - (parseInt(b.acta_numero) || 0);
+            });
+            
+            actasOrdenadas.forEach(acta => {
+                const actaClass = getMonitorActaClass(acta.estado);
+                const estadoNombre = getEstadoNombre(acta.estado);
+                
+                // Tooltip con información completa
+                const tooltip = `${nombreCompleto} - ${recintoNombre}\nActa: ${acta.acta_numero}\nEstado: ${estadoNombre}`;
+                
+                html += `
+                    <div class="monitor-acta-box ${actaClass}" 
+                         data-tooltip="${escapeHtml(tooltip)}"
+                         data-reporte-id="${acta.reporte_id}"
+                         data-acta-numero="${acta.acta_numero}"
+                         onclick="verDetalleActa(${acta.reporte_id}, '${acta.acta_numero}')">
+                        ${acta.acta_numero}
+                    </div>
+                `;
+            });
+        } else {
+            html += '<span style="color: #9e9e9e; font-size: 12px;">Sin actas asignadas</span>';
+        }
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Función para ver detalle del acta (opcional)
+function verDetalleActa(reporteId, actaNumero) {
+    console.log(`Ver detalle del acta: ${actaNumero} (Reporte ID: ${reporteId})`);
+    // Aquí puedes agregar la lógica para mostrar un modal con detalles del acta
+    alert(`Acta: ${actaNumero}\nReporte ID: ${reporteId}`);
+}
+
+// Función de escape HTML para evitar inyección
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Cargar lista de monitores
+async function cargarMonitores() {
+    const monitorSelect = document.getElementById('monitorSelect');
+    
+    try {
+        monitorSelect.disabled = true;
+        monitorSelect.innerHTML = '<option value="">Cargando monitores...</option>';
+        
+        const response = await fetch(`${API_BASE_URL}/api/monitores/`, {
+            headers: { 'X-CSRFToken': getCSRFToken() }
+        });
+        
+        if (!response.ok) throw new Error('Error al cargar monitores');
+        
+        const monitores = await response.json();
+        
+        if (!monitores || monitores.length === 0) {
+            monitorSelect.innerHTML = '<option value="">No hay monitores disponibles</option>';
+            document.getElementById('monitoresCount').textContent = '0';
+            return;
+        }
+        
+        let options = '<option value="">-- Seleccione un monitor --</option>';
+        monitores.forEach(monitor => {
+            options += `<option value="${monitor.id}">${monitor.nombre} - CI: ${monitor.ci} - Cel: ${monitor.celular}</option>`;
+        });
+        
+        monitorSelect.innerHTML = options;
+        document.getElementById('monitoresCount').textContent = monitores.length;
+        
+    } catch (error) {
+        console.error('Error:', error);
+        monitorSelect.innerHTML = '<option value="">Error al cargar monitores</option>';
+    } finally {
+        monitorSelect.disabled = false;
+    }
+}
+
 
 // Iniciar actualización en tiempo real (cada 30 segundos)
 function iniciarActualizacionTiempoReal() {
@@ -456,7 +698,9 @@ function iniciarActualizacionTiempoReal() {
                 if (response.ok) {
                     const data = await response.json();
                     actualizarTarjetas(data);
-                    actualizarGrafico(data);
+                    actualizarGraficoGeneral(data.general);
+                    actualizarGraficoDepartamental(data.departamentales);
+                    actualizarGraficoMunicipal(data.municipales);
                 }
             } catch (error) {
                 console.error('Error en actualización en tiempo real:', error);
@@ -506,6 +750,7 @@ function mostrarNotificacion(mensaje, tipo) {
 document.addEventListener('DOMContentLoaded', () => {
     loadNavbar();
     cargarTransmisiones();
+    inicializarMonitores();
 });
 
 // Detener actualización al cambiar de página

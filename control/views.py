@@ -376,3 +376,74 @@ def api_estadisticas_actas(request, transmision_id):
     }
 
     return JsonResponse(data)
+
+@login_required
+def api_monitores(request):
+
+    monitores = Monitor.objects.all().order_by("nombre")
+
+    data = [
+        {
+            "id": m.id,
+            "nombre": f"{m.nombre} {m.apellido_paterno or ''} {m.apellido_materno or ''}".strip(),
+            "ci": m.ci,
+            "celular": m.celular
+        }
+        for m in monitores
+    ]
+
+    return JsonResponse(data, safe=False)
+
+
+def api_monitor_actas(request, monitor_id, transmision_id):
+
+    try:
+        monitor = Monitor.objects.get(id=monitor_id)
+    except Monitor.DoesNotExist:
+        return JsonResponse({"error": "Monitor no encontrado"}, status=404)
+
+    operadores = Operador.objects.filter(
+        monitor=monitor
+    ).select_related("recinto")
+
+    reportes_qs = ReporteTransmision.objects.filter(
+        transmision_id=transmision_id
+    ).select_related("acta")
+
+    operadores = operadores.prefetch_related(
+        Prefetch(
+            "reportetransmision_set",
+            queryset=reportes_qs,
+            to_attr="reportes"
+        )
+    )
+
+    data = []
+
+    for op in operadores:
+
+        operador_data = {
+            "id": op.id,
+            "nombre": op.nombre,
+            "apellido_paterno": op.apellido_paterno,
+            "apellido_materno": op.apellido_materno,
+            "ci": op.ci,
+            "celular": op.celular,
+            "recinto": {
+                "id": op.recinto.id if op.recinto else None,
+                "nombre": op.recinto.nombre if op.recinto else None
+            },
+            "actas": []
+        }
+
+        for rep in op.reportes:
+            operador_data["actas"].append({
+                "reporte_id": rep.id,
+                "acta_numero": rep.acta.numero,
+                "estado": rep.estado,
+                "observacion": rep.observacion
+            })
+
+        data.append(operador_data)
+
+    return JsonResponse(data, safe=False)
