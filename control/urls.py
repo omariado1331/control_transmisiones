@@ -15,6 +15,8 @@ from .views import (
     api_actualizar_estado,
     api_actualizar_observacion,
     api_admin_inicio,
+    api_estadisticas_actas,
+
 )
 
 urlpatterns = [
@@ -33,5 +35,7 @@ urlpatterns = [
     path("api/reporte/<int:reporte_id>/estado/", api_actualizar_estado, name="actualizar estado"),
     path("api/reporte/<int:reporte_id>/observacion/", api_actualizar_observacion, name="actualizar observacion"),
     path("api/admin/inicio/", api_admin_inicio, name="Inicio administrador"),
+    path("api/transmision-reporte/<int:transmision_id>/estadisticas/", api_estadisticas_actas, name="estadisticas actas"),
+
 
 ]

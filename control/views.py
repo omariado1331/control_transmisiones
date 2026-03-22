@@ -311,3 +311,44 @@ def api_admin_inicio(request):
     }
 
     return JsonResponse(data)
+
+@login_required
+def api_estadisticas_actas(request, transmision_id):
+
+    qs = ReporteTransmision.objects.filter(
+        transmision_id=transmision_id
+    )
+
+    conteo_qs = qs.values("estado").annotate(total=Count("id"))
+
+    # estructura base
+    conteo = {
+        "TRANSMITIDO": 0,
+        "REVISADO_RECHAZADO": 0,
+        "ENVIADO_NO_REVISADO": 0,
+        "SIN_ENVIAR": 0
+    }
+
+    for item in conteo_qs:
+        conteo[item["estado"]] = item["total"]
+
+    total = sum(conteo.values())
+
+    # calcular porcentajes
+    porcentajes = {}
+
+    for estado, cantidad in conteo.items():
+        if total > 0:
+            porcentaje = (cantidad / total) * 100
+        else:
+            porcentaje = 0
+
+        porcentajes[estado] = round(porcentaje, 2)
+
+    data = {
+        "total": total,
+        "conteo": conteo,
+        "porcentajes": porcentajes
+    }
+
+    return JsonResponse(data)

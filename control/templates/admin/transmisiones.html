@@ -4,12 +4,56 @@
     <title>Transmisiones - Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../../static/navbar.css">
+    <link rel="stylesheet" href="../../static/transmisiones.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <script src="../../static/navbar.js"></script>
     <div id="navbar"></div>
 
+    <div class="main-container">
+        <!-- Selector de transmisiones -->
+        <div class="selector-container">
+            <div class="selector-group">
+                <label><i class="fas fa-broadcast-tower"></i> Seleccionar Transmisión</label>
+                <select id="transmisionSelect">
+                    <option value="">-- Cargando transmisiones --</option>
+                </select>
+            </div>
+            <button class="cargar-btn" onclick="cargarEstadisticas()" id="cargarBtn">
+                <i class="fas fa-sync-alt"></i>
+                Cargar Datos
+            </button>
+        </div>
+
+        <!-- Contenedor de resultados -->
+        <div id="resultadosContainer" style="display: none;">
+            <!-- Tarjetas de estados -->
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- Gráfico de torta -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="total-actas" id="totalActas">0</div>
+                    <div class="total-label">Total de Actas</div>
+                </div>
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Mensaje de carga inicial -->
+        <div id="initialMessage" class="info-message">
+            <i class="fas fa-info-circle"></i>
+            <p>Seleccione una transmisión y presione "Cargar Datos" para ver las estadísticas</p>
+        </div>
+    </div>
+
+
 <script>
+
+let pieChart = null;
+let refreshInterval = null;
+let currentReporteId = null;
 
 // cargar el Navbar
 function loadNavbar() {
@@ -28,10 +72,291 @@ function loadNavbar() {
         });
 }
 
+// Cargar lista de transmisiones
+async function cargarTransmisiones() {
+    const select = document.getElementById('transmisionSelect');
+    const cargarBtn = document.getElementById('cargarBtn');
+    
+    try {
+        select.disabled = true;
+        cargarBtn.disabled = true;
+        select.innerHTML = '<option value="">Cargando transmisiones...</option>';
+        
+        const response = await fetch(`${API_BASE_URL}/api/transmisiones/`, {
+            headers: { 'X-CSRFToken': getCSRFToken() }
+        });
+        
+        if (!response.ok) throw new Error('Error al cargar transmisiones');
+        
+        const transmisiones = await response.json();
+        
+        if (!transmisiones || transmisiones.length === 0) {
+            select.innerHTML = '<option value="">No hay transmisiones disponibles</option>';
+            return;
+        }
+        
+        let options = '<option value="">-- Seleccione una transmisión --</option>';
+        transmisiones.forEach(t => {
+            options += `<option value="${t.id}">${t.descripcion} - ${t.fecha} ${t.hora}</option>`;
+        });
+        
+        select.innerHTML = options;
+        
+    } catch (error) {
+        console.error('Error:', error);
+        select.innerHTML = '<option value="">Error al cargar transmisiones</option>';
+    } finally {
+        select.disabled = false;
+        cargarBtn.disabled = false;
+    }
+}
+
+// Cargar estadísticas de la transmisión seleccionada
+async function cargarEstadisticas() {
+    const select = document.getElementById('transmisionSelect');
+    const reporteId = select.value;
+    const cargarBtn = document.getElementById('cargarBtn');
+    const resultadosContainer = document.getElementById('resultadosContainer');
+    const initialMessage = document.getElementById('initialMessage');
+    
+    if (!reporteId) {
+        alert('Por favor seleccione una transmisión');
+        return;
+    }
+    
+    currentReporteId = reporteId;
+    
+    // Mostrar loader
+    cargarBtn.disabled = true;
+    cargarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+    resultadosContainer.style.display = 'none';
+    initialMessage.style.display = 'none';
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/transmision-reporte/${reporteId}/estadisticas/`, {
+            headers: { 'X-CSRFToken': getCSRFToken() }
+        });
+        console.log(response);
+        
+        if (!response.ok) throw new Error('Error al cargar estadísticas');
+        
+        const data = await response.json();
+        console.log(data);
+        // Mostrar resultados
+        resultadosContainer.style.display = 'block';
+        
+        // Actualizar tarjetas
+        actualizarTarjetas(data);
+        
+        // Actualizar gráfico
+        actualizarGrafico(data);
+        
+        // Iniciar actualización en tiempo real (cada 30 segundos)
+        iniciarActualizacionTiempoReal();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        initialMessage.style.display = 'block';
+        initialMessage.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>Error al cargar las estadísticas. Por favor, intente nuevamente.</p>
+        `;
+        resultadosContainer.style.display = 'none';
+    } finally {
+        cargarBtn.disabled = false;
+        cargarBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Cargar Datos';
+    }
+}
+
+// Actualizar tarjetas de estados
+function actualizarTarjetas(data) {
+    const statsGrid = document.getElementById('statsGrid');
+    const conteo = data.conteo || {};
+    const porcentajes = data.porcentajes || {};
+    
+    const estados = [
+        { key: 'TRANSMITIDO', nombre: 'Transmitido', icono: 'fa-paper-plane', color: '#2196f3', bg: '#e3f2fd' },
+        { key: 'ENVIADO_NO_REVISADO', nombre: 'Enviado no revisado', icono: 'fa-clock', color: '#4caf50', bg: '#e8f5e9' },
+        { key: 'SIN_ENVIAR', nombre: 'Sin enviar', icono: 'fa-hourglass', color: '#ff9800', bg: '#fff3e0' },
+        { key: 'REVISADO_RECHAZADO', nombre: 'Revisado rechazado', icono: 'fa-times-circle', color: '#f44336', bg: '#ffebee' }
+    ];
+    
+    let html = '';
+    estados.forEach(estado => {
+        const cantidad = conteo[estado.key] || 0;
+        const porcentaje = porcentajes[estado.key] || 0;
+        
+        html += `
+            <div class="stat-card ${getCardClass(estado.key)}">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fas ${estado.icono}"></i>
+                    </div>
+                    <div class="stat-badge">${porcentaje.toFixed(1)}%</div>
+                </div>
+                <div class="stat-value">${cantidad.toLocaleString()}</div>
+                <div class="stat-label">${estado.nombre}</div>
+                <div class="stat-percentage">${Math.round(porcentaje)}% del total</div>
+            </div>
+        `;
+    });
+    
+    statsGrid.innerHTML = html;
+    
+    // Actualizar total de actas
+    document.getElementById('totalActas').textContent = (data.total || 0).toLocaleString();
+}
+
+function getCardClass(estado) {
+    switch(estado) {
+        case 'TRANSMITIDO': return 'transmitido';
+        case 'ENVIADO_NO_REVISADO': return 'enviado-no-revisado';
+        case 'SIN_ENVIAR': return 'sin-enviar';
+        case 'REVISADO_RECHAZADO': return 'revisado-rechazado';
+        default: return '';
+    }
+}
+
+// Actualizar gráfico de torta
+function actualizarGrafico(data) {
+    const ctx = document.getElementById('pieChart').getContext('2d');
+    const conteo = data.conteo || {};
+    const porcentajes = data.porcentajes || {};
+    
+    const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
+    const values = [
+        conteo['TRANSMITIDO'] || 0,
+        conteo['ENVIADO_NO_REVISADO'] || 0,
+        conteo['SIN_ENVIAR'] || 0,
+        conteo['REVISADO_RECHAZADO'] || 0
+    ];
+    const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
+    
+    if (pieChart) {
+        pieChart.data.datasets[0].data = values;
+        pieChart.data.datasets[0].backgroundColor = backgroundColors;
+        pieChart.update();
+    } else {
+        pieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 12
+                            },
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = data.total || 0;
+                                const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
+                            }
+                        }
+                    }
+                },
+                layout: {
+                    padding: 20
+                }
+            }
+        });
+    }
+}
+
+// Iniciar actualización en tiempo real (cada 30 segundos)
+function iniciarActualizacionTiempoReal() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+    
+    refreshInterval = setInterval(async () => {
+        if (currentReporteId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/transmision-reporte/${currentReporteId}/estadisticas/`, {
+                    headers: { 'X-CSRFToken': getCSRFToken() }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    actualizarTarjetas(data);
+                    actualizarGrafico(data);
+                }
+            } catch (error) {
+                console.error('Error en actualización en tiempo real:', error);
+            }
+        }
+    }, 5000); // Cada 5 segundos
+}
+
+// Función para mostrar notificaciones
+function mostrarNotificacion(mensaje, tipo) {
+    // Crear elemento de notificación
+    const notificacion = document.createElement('div');
+    notificacion.className = `notificacion ${tipo}`;
+    notificacion.innerHTML = `
+        <i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        <span>${mensaje}</span>
+    `;
+    
+    // Estilos para la notificación
+    notificacion.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${tipo === 'success' ? '#4caf50' : '#f44336'};
+        color: white;
+        padding: 12px 25px;
+        border-radius: 50px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 2000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notificacion);
+    
+    // Eliminar después de 3 segundos
+    setTimeout(() => {
+        notificacion.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notificacion);
+        }, 300);
+    }, 3000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadNavbar();
+    cargarTransmisiones();
 });
 
+// Detener actualización al cambiar de página
+window.addEventListener('beforeunload', () => {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
 
 </script>
 
