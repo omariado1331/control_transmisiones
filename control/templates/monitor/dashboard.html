@@ -383,11 +383,11 @@
             const buscadorInput = document.getElementById('buscadorInput');
 
             // Limpiar buscador
-            if (buscadorInput) {
-                buscadorInput.value = '';
-                const limpiarBtn = document.getElementById('limpiarBusqueda');
-                if (limpiarBtn) limpiarBtn.style.display = 'none';
-            }
+            // if (buscadorInput) {
+            //     buscadorInput.value = '';
+            //     const limpiarBtn = document.getElementById('limpiarBusqueda');
+            //     if (limpiarBtn) limpiarBtn.style.display = 'none';
+            // }
 
             // Mostrar loader
             tableBody.innerHTML = `
@@ -435,9 +435,16 @@
                     actualizarContadorResultados(0, 0);
                     return;
                 }
-
-                renderizarTablaConDatos(operadores);
-                actualizarContadorResultados(operadores.length, operadores.length);
+                
+                console.log(textoIngresadoBusqueda);
+                if (!textoIngresadoBusqueda){
+                    renderizarTablaConDatos(operadores);
+                    actualizarContadorResultados(operadores.length, operadores.length);
+                }
+                else {
+                    filtrarTabla(textoIngresadoBusqueda);
+                }
+                
 
 
             } catch (error) {
@@ -822,16 +829,17 @@
 
                 timeoutBusqueda = setTimeout(() => {
                     filtrarTabla(termino);
+                    textoIngresadoBusqueda = termino;
                 }, 300);
             });
 
             // Evento para limpiar búsqueda
             if (limpiarBtn) {
-                limpiarBtn.addEventListener('click', function () {
-                    buscadorInput.value = '';
-                    this.style.display = 'none';
-                    filtrarTabla('');
-                });
+               limpiarBtn.addEventListener('click', function () {
+                   buscadorInput.value = '';
+                   this.style.display = 'none';
+                   filtrarTabla('');
+               });
             }
         }
 
