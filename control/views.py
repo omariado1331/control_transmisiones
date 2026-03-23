@@ -21,7 +21,9 @@ from .models import (
     Recinto,
     Actividad
 )
+from django.views.decorators.cache import never_cache
 
+@never_cache
 def api_login(request):
 
     if request.method != "POST":
@@ -55,21 +57,25 @@ def api_login(request):
 
     return JsonResponse({"error": "Usuario sin rol"}, status=400)
 
+@never_cache
 def login_view(request):
     return render(request, "login.html")
 
+@never_cache
 @login_required
 def admin_inicio(request):
     if not request.user.is_superuser:
         return HttpResponseForbidden("NO AUTORIZADO")
     return render(request, "admin/inicio.html")
 
+@never_cache
 @login_required
 def admin_transmisiones(request):
     if not request.user.is_superuser:
         return HttpResponseForbidden("NO AUTORIZADO")
     return render(request, "admin/transmisiones.html")
 
+@never_cache
 @login_required
 def admin_actividades(request):
     if not request.user.is_superuser:
@@ -83,12 +89,14 @@ def soporte_dashboard(request):
 
     return render(request, "soporte/dashboard.html")
 
+@never_cache
 @login_required
 def monitor_dashboard(request):
     if not Monitor.objects.filter(user=request.user).exists():
         return HttpResponseForbidden("NO AUTORIZADO")
     return render(request, "monitor/dashboard.html")
 
+@never_cache
 @login_required
 def coordinador_dashboard(request):
     if not Coordinador.objects.filter(user=request.user).exists():

@@ -56,6 +56,8 @@ MIDDLEWARE = [
     'control.middleware.NoCacheMiddleware',
 ]
 
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+
 ROOT_URLCONF = 'control_transmisiones.urls'
 
 TEMPLATES = [
