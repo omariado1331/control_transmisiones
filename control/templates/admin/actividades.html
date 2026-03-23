@@ -1,40 +1,44 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Actividades - Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../../static/navbar.css">
+    {% include "meta_tags.html" %}
+    <link rel="stylesheet" href="../../static/navbar.css?v=2026.03.22">
 </head>
+
 <body>
 
-    <script src="../../static/navbar.js"></script>
+    <script src="../../static/navbar.js?v=2026.03.22"></script>
     <div id="navbar"></div>
 
-<script>
+    <script>
 
-// cargar el Navbar
-function loadNavbar() {
-    fetch('/static/navbar.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('navbar').innerHTML = data;
+        // cargar el Navbar
+        function loadNavbar() {
+            fetch('/static/navbar.html?v=2026.03.22')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('navbar').innerHTML = data;
 
-            if (window.initNavbar) {
-                window.initNavbar();
-            }
-        })
-        .catch(error => {
-            console.error('Error al cargar navbar:', error);
-            document.getElementById('navbar').innerHTML = '<div class="navbar">Error al cargar navbar</div>';
+                    if (window.initNavbar) {
+                        window.initNavbar();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar navbar:', error);
+                    document.getElementById('navbar').innerHTML = '<div class="navbar">Error al cargar navbar</div>';
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNavbar();
         });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadNavbar();
-});
 
 
-</script>
+    </script>
 
 </body>
+
 </html>

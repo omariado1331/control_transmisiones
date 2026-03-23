@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Monitor - Sistema de Actas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../../static/monitorStyle.css">
+    {% include "meta_tags.html" %}
+    <link rel="stylesheet" href="../../static/monitorStyle.css?v=2026.03.22">
 </head>
+
 <body>
     <!-- Navbar -->
     <div class="navbar">
         <div class="logo">
-            <img src="../../static/images/Logo_oep.png" alt="Logo" id="logo" onerror="this.src='https://via.placeholder.com/40x40/2e7d32/ffffff?text=LOGO'">
+            <img src="../../static/images/Logo_oep.png" alt="Logo" id="logo"
+                onerror="this.src='https://via.placeholder.com/40x40/2e7d32/ffffff?text=LOGO'">
             <span>Monitoreo</span>
         </div>
-        
+
         <div class="user-info">
             <div class="user-details">
                 <div class="user-name" id="userName">Cargando...</div>
@@ -35,11 +39,11 @@
                 <i class="fas fa-broadcast-tower"></i>
                 <span>Seleccionar Transmisión:</span>
             </div>
-            
+
             <select id="transmisionSelect">
                 <option value="">-- Seleccione una transmisión --</option>
             </select>
-            
+
             <button class="cargar-btn" onclick="cargarTransmision()" id="cargarBtn">
                 <i class="fas fa-sync-alt"></i>
                 <span>Cargar Datos</span>
@@ -82,12 +86,8 @@
         <div class="buscador-container">
             <div class="buscador-wrapper">
                 <i class="fas fa-search buscador-icon"></i>
-                <input 
-                    type="text" 
-                    id="buscadorInput" 
-                    placeholder="Buscar por operador, CI, celular, recinto o número de acta..."
-                    autocomplete="off"
-                >
+                <input type="text" id="buscadorInput"
+                    placeholder="Buscar por operador, CI, celular, recinto o número de acta..." autocomplete="off">
                 <button id="limpiarBusqueda" class="limpiar-busqueda" style="display: none;">
                     <i class="fas fa-times"></i>
                 </button>
@@ -101,16 +101,16 @@
         <div class="table-container">
             <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="color: #2e7d32;">
-                    <i class="fas fa-users"></i> 
+                    <i class="fas fa-users"></i>
                     Operadores
                     <span id="operadorCount" style="font-size: 14px; color: #757575; margin-left: 10px;"></span>
                 </h3>
                 <div id="ultimaActualizacion" style="font-size: 12px; color: #9e9e9e;">
-                    <i class="fas fa-clock"></i> 
+                    <i class="fas fa-clock"></i>
                     <span></span>
                 </div>
             </div>
-            
+
             <table id="dataTable">
                 <thead>
                     <tr>
@@ -126,7 +126,8 @@
                         <td colspan="5">
                             <div class="loader-container">
                                 <div class="loader"></div>
-                                <p style="margin-top: 20px; color: #757575;">Seleccione una transmisión para cargar datos</p>
+                                <p style="margin-top: 20px; color: #757575;">Seleccione una transmisión para cargar
+                                    datos</p>
                             </div>
                         </td>
                     </tr>
@@ -146,7 +147,7 @@
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                
+
                 <div class="modal-body">
                     <div class="acta-info">
                         <div class="acta-info-item">
@@ -162,14 +163,11 @@
                             <span><strong>Estado:</strong> <span id="modalActaEstado">-</span></span>
                         </div>
                     </div>
-                    
-                    <textarea 
-                        class="observacion-textarea" 
-                        id="observacionTexto" 
-                        placeholder="Escribe aquí la observación del acta..."
-                    ></textarea>
+
+                    <textarea class="observacion-textarea" id="observacionTexto"
+                        placeholder="Escribe aquí la observación del acta..."></textarea>
                 </div>
-                
+
                 <div class="modal-footer">
                     <button class="modal-btn cancelar" onclick="cerrarModal()">
                         <i class="fas fa-times"></i>
@@ -195,7 +193,7 @@
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                
+
                 <div class="modal-body">
                     <div class="acta-info">
                         <div class="acta-info-item">
@@ -215,17 +213,17 @@
                             <span><strong>Estado actual:</strong> <span id="estadoModalActual">-</span></span>
                         </div>
                     </div>
-                    
+
                     <div class="estados-container" id="estadosContainer">
                         <!-- Los estados se cargarán dinámicamente con JS -->
                     </div>
-                    
+
                     <div class="instrucciones">
                         <i class="fas fa-info-circle"></i>
                         <span>Al hacer clic sobre un estado se cambiará el estado del acta automáticamente</span>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer">
                     <button class="modal-btn cancelar" onclick="cerrarEstadoModal()">
                         <i class="fas fa-times"></i>
@@ -237,162 +235,162 @@
 
     </div>
 
-<script>
+    <script>
 
-// Configuración
-const API_BASE_URL = '/control'; // Agregar URL base si es necesario
-let transmisiones = [];
-let currentTransmisionId = null;
+        // Configuración
+        const API_BASE_URL = '/control'; // Agregar URL base si es necesario
+        let transmisiones = [];
+        let currentTransmisionId = null;
 
-// Variables globales para el modal
-let currentActaId = null;
-let currentOperadorNombre = '';
-let currentActaNumero = '';
-let currentActaEstado = '';
+        // Variables globales para el modal
+        let currentActaId = null;
+        let currentOperadorNombre = '';
+        let currentActaNumero = '';
+        let currentActaEstado = '';
 
-// Variables globales para el modal de estados
-let currentEstadoActaId = null;
-let currentEstadoOperadorId = null;
-let currentEstadoRecinto = '';
+        // Variables globales para el modal de estados
+        let currentEstadoActaId = null;
+        let currentEstadoOperadorId = null;
+        let currentEstadoRecinto = '';
 
-// Variables para el buscador
-let datosOriginales = []; // Guardar los datos originales sin filtrar
-let timeoutBusqueda = null;
-let textoIngresadoBusqueda = '';
+        // Variables para el buscador
+        let datosOriginales = []; // Guardar los datos originales sin filtrar
+        let timeoutBusqueda = null;
+        let textoIngresadoBusqueda = '';
 
-// Función para obtener el token CSRF
-function getCSRFToken() {
-    return document.cookie.split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-}
-
-// Inicialización
-document.addEventListener('DOMContentLoaded', () => {
-    loadUserData();
-    cargarTransmisiones();
-    
-    // Cargar automáticamente si hay una transmisión seleccionada (opcional)
-    const select = document.getElementById('transmisionSelect');
-    select.addEventListener('change', (e) => {
-        if (e.target.value) {
-            // Opcional: cargar automáticamente al seleccionar
-            // cargarTransmision();
+        // Función para obtener el token CSRF
+        function getCSRFToken() {
+            return document.cookie.split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
         }
-    });
-});
 
-// Cargar datos del usuario
-async function loadUserData() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/user-info/`, {
-            headers: {
-                'X-CSRFToken': getCSRFToken()
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserData();
+            cargarTransmisiones();
+
+            // Cargar automáticamente si hay una transmisión seleccionada (opcional)
+            const select = document.getElementById('transmisionSelect');
+            select.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    // Opcional: cargar automáticamente al seleccionar
+                    // cargarTransmision();
+                }
+            });
+        });
+
+        // Cargar datos del usuario
+        async function loadUserData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/user-info/`, {
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                });
+                const data = await response.json();
+
+                document.getElementById('userName').textContent = data.username || 'Usuario';
+
+                const roleSpan = document.getElementById('userRole').querySelector('span');
+                roleSpan.textContent = data.role || 'Monitor';
+
+                // Cambiar color del punto según rol
+                const roleDot = document.getElementById('userRole').querySelector('i');
+                roleDot.style.color = data.role === 'admin' ? '#f44336' : '#4caf50';
+
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                document.getElementById('userName').textContent = 'Error';
             }
-        });
-        const data = await response.json();
-        
-        document.getElementById('userName').textContent = data.username || 'Usuario';
-        
-        const roleSpan = document.getElementById('userRole').querySelector('span');
-        roleSpan.textContent = data.role || 'Monitor';
-        
-        // Cambiar color del punto según rol
-        const roleDot = document.getElementById('userRole').querySelector('i');
-        roleDot.style.color = data.role === 'admin' ? '#f44336' : '#4caf50';
-        
-    } catch (error) {
-        console.error('Error loading user data:', error);
-        document.getElementById('userName').textContent = 'Error';
-    }
-}
+        }
 
-// Cargar lista de transmisiones
-async function cargarTransmisiones() {
-    const select = document.getElementById('transmisionSelect');
-    const cargarBtn = document.getElementById('cargarBtn');
-    
-    try {
-        select.disabled = true;
-        cargarBtn.disabled = true;
-        select.innerHTML = '<option value="">Cargando transmisiones...</option>';
-        
-        const response = await fetch(`${API_BASE_URL}/api/transmisiones/`, {
-            headers: {
-                'X-CSRFToken': getCSRFToken()
+        // Cargar lista de transmisiones
+        async function cargarTransmisiones() {
+            const select = document.getElementById('transmisionSelect');
+            const cargarBtn = document.getElementById('cargarBtn');
+
+            try {
+                select.disabled = true;
+                cargarBtn.disabled = true;
+                select.innerHTML = '<option value="">Cargando transmisiones...</option>';
+
+                const response = await fetch(`${API_BASE_URL}/api/transmisiones/`, {
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar transmisiones');
+
+                transmisiones = await response.json();
+
+                // Llenar select
+                let options = '<option value="">-- Seleccione una transmisión --</option>';
+                transmisiones.forEach(t => {
+                    options += `<option value="${t.id}">${t.descripcion} - ${t.fecha} ${t.hora}</option>`;
+                });
+
+                select.innerHTML = options;
+
+            } catch (error) {
+                console.error('Error:', error);
+                select.innerHTML = '<option value="">Error al cargar transmisiones</option>';
+            } finally {
+                select.disabled = false;
+                cargarBtn.disabled = false;
             }
-        });
-        
-        if (!response.ok) throw new Error('Error al cargar transmisiones');
-        
-        transmisiones = await response.json();
-        
-        // Llenar select
-        let options = '<option value="">-- Seleccione una transmisión --</option>';
-        transmisiones.forEach(t => {
-            options += `<option value="${t.id}">${t.descripcion} - ${t.fecha} ${t.hora}</option>`;
-        });
-        
-        select.innerHTML = options;
-        
-    } catch (error) {
-        console.error('Error:', error);
-        select.innerHTML = '<option value="">Error al cargar transmisiones</option>';
-    } finally {
-        select.disabled = false;
-        cargarBtn.disabled = false;
-    }
-}
+        }
 
-// Función de logout
-function logout() {
-    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-        mostrarNotificacion("sesion cerrada, hasta pronto", 'error');
-        fetch(`${API_BASE_URL}/api/logout/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken()
+        // Función de logout
+        function logout() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                mostrarNotificacion("sesion cerrada, hasta pronto", 'error');
+                fetch(`${API_BASE_URL}/api/logout/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                })
+                    .finally(() => {
+                        window.location.href = '/control/';
+                    });
             }
-        })
-        .finally(() => {
-            window.location.href = '/control/';
-        });
-    }
-}
+        }
 
-// Función cargar operadores al presionar
-function cargarTransmision() {
-    const select = document.getElementById('transmisionSelect');
-    const transmisionId = select.value;
-    
-    if (!transmisionId) {
-        mostrarNotificacion('Por favor seleccione una transmisión', 'error');
-        return;
-    }
-    
-    currentTransmisionId = transmisionId;
-    cargarOperadores(transmisionId);
-    mostrarNotificacion("Transmisión cargada correctamente", "success")
-}
+        // Función cargar operadores al presionar
+        function cargarTransmision() {
+            const select = document.getElementById('transmisionSelect');
+            const transmisionId = select.value;
 
-// Cargar datos de operadores para una transmisión
-async function cargarOperadores(transmisionId) {
-    const tableBody = document.getElementById('tableBody');
-    const statsContainer = document.getElementById('statsContainer');
-    const cargarBtn = document.getElementById('cargarBtn');
-    const operadorCount = document.getElementById('operadorCount');
-    const ultimaActualizacion = document.getElementById('ultimaActualizacion').querySelector('span');
-    const buscadorInput = document.getElementById('buscadorInput');
-    
-    // Limpiar buscador
-    if (buscadorInput) {
-        buscadorInput.value = '';
-        const limpiarBtn = document.getElementById('limpiarBusqueda');
-        if (limpiarBtn) limpiarBtn.style.display = 'none';
-    }
-    
-    // Mostrar loader
-    tableBody.innerHTML = `
+            if (!transmisionId) {
+                mostrarNotificacion('Por favor seleccione una transmisión', 'error');
+                return;
+            }
+
+            currentTransmisionId = transmisionId;
+            cargarOperadores(transmisionId);
+            mostrarNotificacion("Transmisión cargada correctamente", "success")
+        }
+
+        // Cargar datos de operadores para una transmisión
+        async function cargarOperadores(transmisionId) {
+            const tableBody = document.getElementById('tableBody');
+            const statsContainer = document.getElementById('statsContainer');
+            const cargarBtn = document.getElementById('cargarBtn');
+            const operadorCount = document.getElementById('operadorCount');
+            const ultimaActualizacion = document.getElementById('ultimaActualizacion').querySelector('span');
+            const buscadorInput = document.getElementById('buscadorInput');
+
+            // Limpiar buscador
+            if (buscadorInput) {
+                buscadorInput.value = '';
+                const limpiarBtn = document.getElementById('limpiarBusqueda');
+                if (limpiarBtn) limpiarBtn.style.display = 'none';
+            }
+
+            // Mostrar loader
+            tableBody.innerHTML = `
         <tr>
             <td colspan="5">
                 <div class="loader-container">
@@ -402,27 +400,27 @@ async function cargarOperadores(transmisionId) {
             </td>
         </tr>
     `;
-    
-    // Deshabilitar botón
-    cargarBtn.disabled = true;
-    cargarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/monitor/${transmisionId}/operadores/`, {
-            headers: {
-                'X-CSRFToken': getCSRFToken()
-            }
-        });
-        
-        if (!response.ok) throw new Error('Error al cargar operadores');
-        
-        const operadores = await response.json();
 
-        // Guardar datos originales
-        datosOriginales = operadores;
-        
-        if (!operadores || operadores.length === 0) {
-            tableBody.innerHTML = `
+            // Deshabilitar botón
+            cargarBtn.disabled = true;
+            cargarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/monitor/${transmisionId}/operadores/`, {
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar operadores');
+
+                const operadores = await response.json();
+
+                // Guardar datos originales
+                datosOriginales = operadores;
+
+                if (!operadores || operadores.length === 0) {
+                    tableBody.innerHTML = `
                 <tr>
                     <td colspan="5">
                         <div class="no-data">
@@ -432,19 +430,19 @@ async function cargarOperadores(transmisionId) {
                     </td>
                 </tr>
             `;
-            statsContainer.style.display = 'none';
-            operadorCount.textContent = '(0 operadores)';
-            actualizarContadorResultados(0, 0);
-            return;
-        }
-        
-        renderizarTablaConDatos(operadores);
-        actualizarContadorResultados(operadores.length, operadores.length);
-        
+                    statsContainer.style.display = 'none';
+                    operadorCount.textContent = '(0 operadores)';
+                    actualizarContadorResultados(0, 0);
+                    return;
+                }
 
-    } catch (error) {
-        console.error('Error:', error);
-        tableBody.innerHTML = `
+                renderizarTablaConDatos(operadores);
+                actualizarContadorResultados(operadores.length, operadores.length);
+
+
+            } catch (error) {
+                console.error('Error:', error);
+                tableBody.innerHTML = `
             <tr>
                 <td colspan="5">
                     <div class="no-data">
@@ -457,186 +455,186 @@ async function cargarOperadores(transmisionId) {
                 </td>
             </tr>
         `;
-    } finally {
-        // Restaurar botón
-        cargarBtn.disabled = false;
-        cargarBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Cargar Datos';
-    }
-}
-
-// Función para mostrar el nombre del estado
-function getEstadoNombre(estado) {
-    const estados = {
-        'TRANSMITIDO': 'Transmitido',
-        'REVISADO_RECHAZADO': 'Revisado rechazado',
-        'SIN_ENVIAR': 'Sin enviar',
-        'ENVIADO_NO_REVISADO': 'Enviado no revisado'
-    };
-    return estados[estado] || estado;
-}
-
-// Función para obtener el texto del tooltip
-function getActaTooltip(acta) {
-    const estadoTexto = {
-        'TRANSMITIDO': 'Transmitido',
-        'REVISADO_RECHAZADO': 'Revisado rechazado',
-        'SIN_ENVIAR': 'Sin enviar',
-        'ENVIADO_NO_REVISADO': 'Enviado no revisado'
-    };
-    
-    return `Acta: ${acta.numero} | ${estadoTexto[acta.estado] || 'Sin estado'}${acta.observacion ? ' | ' + acta.observacion : ''}`;
-}
-
-// Función para obtener el color de la acta según su estado
-function getActaClass(estado) {
-    const estados = {
-        'TRANSMITIDO': 'acta-transmitido',
-        'REVISADO_RECHAZADO': 'acta-revisado-rechazado',
-        'SIN_ENVIAR': 'acta-sin-enviar',
-        'ENVIADO_NO_REVISADO': 'acta-enviado-no-revisado'
-    };
-    return estados[estado] || 'acta-sin-enviar';
-}
-
-// Función para ordenar actas por número
-function ordenarActasPorNumero(actas) {
-    if (!actas) return [];
-    return [...actas].sort((a, b) => {
-        // Convertir a número para ordenamiento numérico
-        const numA = parseInt(a.numero) || 0;
-        const numB = parseInt(b.numero) || 0;
-        return numA - numB;
-    });
-}
-
-// Función para abrir el modal
-function abrirModal(actaId, operadorNombre, actaNumero, actaEstado, observacionActual) {
-    currentActaId = actaId;
-    currentOperadorNombre = operadorNombre;
-    currentActaNumero = actaNumero;
-    currentActaEstado = getEstadoNombre(actaEstado);
-    
-    // Llenar datos del modal
-    document.getElementById('modalOperador').textContent = operadorNombre;
-    document.getElementById('modalActaNumero').textContent = actaNumero;
-    document.getElementById('modalActaEstado').textContent = currentActaEstado;
-    document.getElementById('observacionTexto').value = observacionActual || '';
-    
-    // Mostrar modal
-    document.getElementById('observacionModal').classList.add('active');
-}
-
-// Función para cerrar el modal
-function cerrarModal() {
-    document.getElementById('observacionModal').classList.remove('active');
-    currentActaId = null;
-}
-
-// Función para guardar la observación
-async function guardarObservacion() {
-    if (!currentActaId) return;
-    
-    const observacion = document.getElementById('observacionTexto').value;
-    const guardarBtn = document.getElementById('guardarObsBtn');
-    const textoOriginal = guardarBtn.innerHTML;
-    
-    // Mostrar loading
-    guardarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-    guardarBtn.disabled = true;
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/reporte/${currentActaId}/observacion/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify({
-                observacion: observacion
-            })
-        });
-        
-        if (!response.ok) throw new Error('Error al guardar');
-        
-        // Actualizar el botón de observación en la tabla
-        actualizarBotonObservacion(currentActaId, observacion);
-        actualizarEstadisticas();
-        mostrarNotificacion('Observacion añadida', 'success')
-        cerrarModal();
-        
-    } catch (error) {
-        console.error('Error:', error);
-        mostrarNotificacion('Error al guardar la observación', 'error');
-    } finally {
-        guardarBtn.innerHTML = textoOriginal;
-        guardarBtn.disabled = false;
-    }
-}
-
-// Función para actualizar el botón de observación en la tabla
-function actualizarBotonObservacion(actaId, observacion) {
-    const boton = document.querySelector(`.obs-btn[data-acta-id="${actaId}"]`);
-    if (boton) {
-        if (observacion && observacion.trim() !== '') {
-            boton.classList.add('has-obs');
-            boton.title = 'Tiene observación';
-        } else {
-            boton.classList.remove('has-obs');
-            boton.title = 'Agregar observación';
+            } finally {
+                // Restaurar botón
+                cargarBtn.disabled = false;
+                cargarBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Cargar Datos';
+            }
         }
-    }
-}
 
-// Definición de estados disponibles
-const ESTADOS = [
-    {
-        id: 'TRANSMITIDO',
-        nombre: 'Transmitido',
-        descripcion: 'Acta transmitida correctamente',
-        color: 'transmitido',
-        icono: 'fa-paper-plane'
-    },
-    {
-        id: 'ENVIADO_NO_REVISADO',
-        nombre: 'Enviado no revisado',
-        descripcion: 'Acta enviada pendiente de revisión',
-        color: 'enviado-no-revisado',
-        icono: 'fa-clock'
-    },
-    {
-        id: 'SIN_ENVIAR',
-        nombre: 'Sin enviar',
-        descripcion: 'Acta pendiente de envío',
-        color: 'sin-enviar',
-        icono: 'fa-hourglass'
-    },
-    {
-        id: 'REVISADO_RECHAZADO',
-        nombre: 'Revisado rechazado',
-        descripcion: 'Acta rechazada en revisión',
-        color: 'revisado-rechazado',
-        icono: 'fa-times-circle'
-    }
-];
+        // Función para mostrar el nombre del estado
+        function getEstadoNombre(estado) {
+            const estados = {
+                'TRANSMITIDO': 'Transmitido',
+                'REVISADO_RECHAZADO': 'Revisado rechazado',
+                'SIN_ENVIAR': 'Sin enviar',
+                'ENVIADO_NO_REVISADO': 'Enviado no revisado'
+            };
+            return estados[estado] || estado;
+        }
 
-// Función para abrir el modal de estados
-function abrirEstadoModal(actaId, operadorNombre, recintoNombre, actaNumero, estadoActual) {
-    currentEstadoActaId = actaId;
-    currentEstadoRecinto = recintoNombre;
-    
-    // Llenar datos del modal
-    document.getElementById('estadoModalActaNumero').textContent = actaNumero;
-    document.getElementById('estadoModalRecinto').textContent = recintoNombre;
-    document.getElementById('estadoModalOperador').textContent = operadorNombre;
-    document.getElementById('estadoModalActual').textContent = getEstadoNombre(estadoActual);
-    
-    // Generar cards de estados
-    const estadosContainer = document.getElementById('estadosContainer');
-    let estadosHtml = '';
-    
-    ESTADOS.forEach(estado => {
-        const isSelected = estado.id === estadoActual;
-        estadosHtml += `
+        // Función para obtener el texto del tooltip
+        function getActaTooltip(acta) {
+            const estadoTexto = {
+                'TRANSMITIDO': 'Transmitido',
+                'REVISADO_RECHAZADO': 'Revisado rechazado',
+                'SIN_ENVIAR': 'Sin enviar',
+                'ENVIADO_NO_REVISADO': 'Enviado no revisado'
+            };
+
+            return `Acta: ${acta.numero} | ${estadoTexto[acta.estado] || 'Sin estado'}${acta.observacion ? ' | ' + acta.observacion : ''}`;
+        }
+
+        // Función para obtener el color de la acta según su estado
+        function getActaClass(estado) {
+            const estados = {
+                'TRANSMITIDO': 'acta-transmitido',
+                'REVISADO_RECHAZADO': 'acta-revisado-rechazado',
+                'SIN_ENVIAR': 'acta-sin-enviar',
+                'ENVIADO_NO_REVISADO': 'acta-enviado-no-revisado'
+            };
+            return estados[estado] || 'acta-sin-enviar';
+        }
+
+        // Función para ordenar actas por número
+        function ordenarActasPorNumero(actas) {
+            if (!actas) return [];
+            return [...actas].sort((a, b) => {
+                // Convertir a número para ordenamiento numérico
+                const numA = parseInt(a.numero) || 0;
+                const numB = parseInt(b.numero) || 0;
+                return numA - numB;
+            });
+        }
+
+        // Función para abrir el modal
+        function abrirModal(actaId, operadorNombre, actaNumero, actaEstado, observacionActual) {
+            currentActaId = actaId;
+            currentOperadorNombre = operadorNombre;
+            currentActaNumero = actaNumero;
+            currentActaEstado = getEstadoNombre(actaEstado);
+
+            // Llenar datos del modal
+            document.getElementById('modalOperador').textContent = operadorNombre;
+            document.getElementById('modalActaNumero').textContent = actaNumero;
+            document.getElementById('modalActaEstado').textContent = currentActaEstado;
+            document.getElementById('observacionTexto').value = observacionActual || '';
+
+            // Mostrar modal
+            document.getElementById('observacionModal').classList.add('active');
+        }
+
+        // Función para cerrar el modal
+        function cerrarModal() {
+            document.getElementById('observacionModal').classList.remove('active');
+            currentActaId = null;
+        }
+
+        // Función para guardar la observación
+        async function guardarObservacion() {
+            if (!currentActaId) return;
+
+            const observacion = document.getElementById('observacionTexto').value;
+            const guardarBtn = document.getElementById('guardarObsBtn');
+            const textoOriginal = guardarBtn.innerHTML;
+
+            // Mostrar loading
+            guardarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            guardarBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/reporte/${currentActaId}/observacion/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        observacion: observacion
+                    })
+                });
+
+                if (!response.ok) throw new Error('Error al guardar');
+
+                // Actualizar el botón de observación en la tabla
+                actualizarBotonObservacion(currentActaId, observacion);
+                actualizarEstadisticas();
+                mostrarNotificacion('Observacion añadida', 'success')
+                cerrarModal();
+
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al guardar la observación', 'error');
+            } finally {
+                guardarBtn.innerHTML = textoOriginal;
+                guardarBtn.disabled = false;
+            }
+        }
+
+        // Función para actualizar el botón de observación en la tabla
+        function actualizarBotonObservacion(actaId, observacion) {
+            const boton = document.querySelector(`.obs-btn[data-acta-id="${actaId}"]`);
+            if (boton) {
+                if (observacion && observacion.trim() !== '') {
+                    boton.classList.add('has-obs');
+                    boton.title = 'Tiene observación';
+                } else {
+                    boton.classList.remove('has-obs');
+                    boton.title = 'Agregar observación';
+                }
+            }
+        }
+
+        // Definición de estados disponibles
+        const ESTADOS = [
+            {
+                id: 'TRANSMITIDO',
+                nombre: 'Transmitido',
+                descripcion: 'Acta transmitida correctamente',
+                color: 'transmitido',
+                icono: 'fa-paper-plane'
+            },
+            {
+                id: 'ENVIADO_NO_REVISADO',
+                nombre: 'Enviado no revisado',
+                descripcion: 'Acta enviada pendiente de revisión',
+                color: 'enviado-no-revisado',
+                icono: 'fa-clock'
+            },
+            {
+                id: 'SIN_ENVIAR',
+                nombre: 'Sin enviar',
+                descripcion: 'Acta pendiente de envío',
+                color: 'sin-enviar',
+                icono: 'fa-hourglass'
+            },
+            {
+                id: 'REVISADO_RECHAZADO',
+                nombre: 'Revisado rechazado',
+                descripcion: 'Acta rechazada en revisión',
+                color: 'revisado-rechazado',
+                icono: 'fa-times-circle'
+            }
+        ];
+
+        // Función para abrir el modal de estados
+        function abrirEstadoModal(actaId, operadorNombre, recintoNombre, actaNumero, estadoActual) {
+            currentEstadoActaId = actaId;
+            currentEstadoRecinto = recintoNombre;
+
+            // Llenar datos del modal
+            document.getElementById('estadoModalActaNumero').textContent = actaNumero;
+            document.getElementById('estadoModalRecinto').textContent = recintoNombre;
+            document.getElementById('estadoModalOperador').textContent = operadorNombre;
+            document.getElementById('estadoModalActual').textContent = getEstadoNombre(estadoActual);
+
+            // Generar cards de estados
+            const estadosContainer = document.getElementById('estadosContainer');
+            let estadosHtml = '';
+
+            ESTADOS.forEach(estado => {
+                const isSelected = estado.id === estadoActual;
+                estadosHtml += `
             <div class="estado-card ${isSelected ? 'selected' : ''}" onclick="cambiarEstadoActa('${estado.id}')">
                 <div class="estado-color ${estado.color}"></div>
                 <div class="estado-info">
@@ -649,98 +647,98 @@ function abrirEstadoModal(actaId, operadorNombre, recintoNombre, actaNumero, est
                 ${isSelected ? '<i class="fas fa-check" style="color: #2e7d32;"></i>' : ''}
             </div>
         `;
-    });
-    
-    estadosContainer.innerHTML = estadosHtml;
-    
-    // Mostrar modal
-    document.getElementById('estadoModal').classList.add('active');
-}
+            });
 
-// Función para cerrar el modal de estados
-function cerrarEstadoModal() {
-    document.getElementById('estadoModal').classList.remove('active');
-    currentEstadoActaId = null;
-}
+            estadosContainer.innerHTML = estadosHtml;
 
-// Función para cambiar el estado del acta
-async function cambiarEstadoActa(nuevoEstado) {
-    if (!currentEstadoActaId) return;
-    
-    // Mostrar feedback visual en la card seleccionada
-    const cards = document.querySelectorAll('.estado-card');
-    cards.forEach(card => {
-        card.style.opacity = '0.5';
-        card.style.pointerEvents = 'none';
-    });
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/reporte/${currentEstadoActaId}/estado/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken()
-            },
-            body: JSON.stringify({
-                estado: nuevoEstado
-            })
-        });
-        
-        if (!response.ok) throw new Error('Error al cambiar estado');
-        
-        const data = await response.json();
-        
-        // Actualizar el cuadro del acta en la tabla
-        // actualizarEstadoActa(currentEstadoActaId, nuevoEstado);
-        
-        // Actualizar estadísticas
-        actualizarEstadisticas();
-        
-        // Cerrar modal
-        cerrarEstadoModal();
-        
-        // Mostrar mensaje de éxito
-        mostrarNotificacion('Estado actualizado correctamente', 'success');
-        
-    } catch (error) {
-        console.error('Error:', error);
-        mostrarNotificacion('Error al cambiar el estado', 'error');
-        
-        // Restaurar cards
-        cards.forEach(card => {
-            card.style.opacity = '1';
-            card.style.pointerEvents = 'auto';
-        });
-    }
-}
+            // Mostrar modal
+            document.getElementById('estadoModal').classList.add('active');
+        }
 
-// Función para actualizar el estado del acta en la interfaz
-function actualizarEstadoActa(actaId, nuevoEstado) {
-    // Buscar el cuadro del acta por su ID (asumiendo que el acta-id está en un atributo data)
-    const actaBox = document.querySelector(`.acta-box[data-acta-id="${actaId}"]`);
-    if (actaBox) {
-        // Actualizar clase de color
-        actaBox.className = `acta-box ${getActaClass(nuevoEstado)}`;
-        
-        // Actualizar tooltip
-        const nuevoTooltip = `Acta ${actaBox.textContent}: ${getEstadoNombre(nuevoEstado)}`;
-        actaBox.setAttribute('data-tooltip', nuevoTooltip);
-        actaBox.setAttribute('title', nuevoTooltip);
-    }
-}
+        // Función para cerrar el modal de estados
+        function cerrarEstadoModal() {
+            document.getElementById('estadoModal').classList.remove('active');
+            currentEstadoActaId = null;
+        }
 
-// Función para mostrar notificaciones
-function mostrarNotificacion(mensaje, tipo) {
-    // Crear elemento de notificación
-    const notificacion = document.createElement('div');
-    notificacion.className = `notificacion ${tipo}`;
-    notificacion.innerHTML = `
+        // Función para cambiar el estado del acta
+        async function cambiarEstadoActa(nuevoEstado) {
+            if (!currentEstadoActaId) return;
+
+            // Mostrar feedback visual en la card seleccionada
+            const cards = document.querySelectorAll('.estado-card');
+            cards.forEach(card => {
+                card.style.opacity = '0.5';
+                card.style.pointerEvents = 'none';
+            });
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/reporte/${currentEstadoActaId}/estado/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    },
+                    body: JSON.stringify({
+                        estado: nuevoEstado
+                    })
+                });
+
+                if (!response.ok) throw new Error('Error al cambiar estado');
+
+                const data = await response.json();
+
+                // Actualizar el cuadro del acta en la tabla
+                // actualizarEstadoActa(currentEstadoActaId, nuevoEstado);
+
+                // Actualizar estadísticas
+                actualizarEstadisticas();
+
+                // Cerrar modal
+                cerrarEstadoModal();
+
+                // Mostrar mensaje de éxito
+                mostrarNotificacion('Estado actualizado correctamente', 'success');
+
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al cambiar el estado', 'error');
+
+                // Restaurar cards
+                cards.forEach(card => {
+                    card.style.opacity = '1';
+                    card.style.pointerEvents = 'auto';
+                });
+            }
+        }
+
+        // Función para actualizar el estado del acta en la interfaz
+        function actualizarEstadoActa(actaId, nuevoEstado) {
+            // Buscar el cuadro del acta por su ID (asumiendo que el acta-id está en un atributo data)
+            const actaBox = document.querySelector(`.acta-box[data-acta-id="${actaId}"]`);
+            if (actaBox) {
+                // Actualizar clase de color
+                actaBox.className = `acta-box ${getActaClass(nuevoEstado)}`;
+
+                // Actualizar tooltip
+                const nuevoTooltip = `Acta ${actaBox.textContent}: ${getEstadoNombre(nuevoEstado)}`;
+                actaBox.setAttribute('data-tooltip', nuevoTooltip);
+                actaBox.setAttribute('title', nuevoTooltip);
+            }
+        }
+
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo) {
+            // Crear elemento de notificación
+            const notificacion = document.createElement('div');
+            notificacion.className = `notificacion ${tipo}`;
+            notificacion.innerHTML = `
         <i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
         <span>${mensaje}</span>
     `;
-    
-    // Estilos para la notificación
-    notificacion.style.cssText = `
+
+            // Estilos para la notificación
+            notificacion.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
@@ -755,30 +753,30 @@ function mostrarNotificacion(mensaje, tipo) {
         z-index: 2000;
         animation: slideIn 0.3s ease;
     `;
-    
-    document.body.appendChild(notificacion);
-    
-    // Eliminar después de 3 segundos
-    setTimeout(() => {
-        notificacion.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            document.body.removeChild(notificacion);
-        }, 300);
-    }, 3000);
-}
 
-// Actualizar estadísticas después de cambiar estado
-function actualizarEstadisticas() {
-    // Esta función debería recalcular los contadores basados en los datos actuales
-    // Por ahora, recargamos los datos completos
-    if (currentTransmisionId) {
-        cargarOperadores(currentTransmisionId);
-    }
-}
+            document.body.appendChild(notificacion);
 
-// Agregar animaciones CSS
-const style = document.createElement('style');
-style.textContent = `
+            // Eliminar después de 3 segundos
+            setTimeout(() => {
+                notificacion.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notificacion);
+                }, 300);
+            }, 3000);
+        }
+
+        // Actualizar estadísticas después de cambiar estado
+        function actualizarEstadisticas() {
+            // Esta función debería recalcular los contadores basados en los datos actuales
+            // Por ahora, recargamos los datos completos
+            if (currentTransmisionId) {
+                cargarOperadores(currentTransmisionId);
+            }
+        }
+
+        // Agregar animaciones CSS
+        const style = document.createElement('style');
+        style.textContent = `
     @keyframes slideIn {
         from {
             transform: translateX(100%);
@@ -801,92 +799,92 @@ style.textContent = `
         }
     }
 `;
-document.head.appendChild(style);
+        document.head.appendChild(style);
 
-// Función para inicializar el buscador
-function inicializarBuscador() {
-    const buscadorInput = document.getElementById('buscadorInput');
-    const limpiarBtn = document.getElementById('limpiarBusqueda');
-    
-    if (!buscadorInput) return;
-    
-    // Evento de búsqueda con debounce
-    buscadorInput.addEventListener('input', function(e) {
-        const termino = e.target.value;
-        
-        // Mostrar/ocultar botón de limpiar
-        if (limpiarBtn) {
-            limpiarBtn.style.display = termino.length > 0 ? 'block' : 'none';
+        // Función para inicializar el buscador
+        function inicializarBuscador() {
+            const buscadorInput = document.getElementById('buscadorInput');
+            const limpiarBtn = document.getElementById('limpiarBusqueda');
+
+            if (!buscadorInput) return;
+
+            // Evento de búsqueda con debounce
+            buscadorInput.addEventListener('input', function (e) {
+                const termino = e.target.value;
+
+                // Mostrar/ocultar botón de limpiar
+                if (limpiarBtn) {
+                    limpiarBtn.style.display = termino.length > 0 ? 'block' : 'none';
+                }
+
+                // Debounce para evitar búsquedas constantes
+                if (timeoutBusqueda) clearTimeout(timeoutBusqueda);
+
+                timeoutBusqueda = setTimeout(() => {
+                    filtrarTabla(termino);
+                }, 300);
+            });
+
+            // Evento para limpiar búsqueda
+            if (limpiarBtn) {
+                limpiarBtn.addEventListener('click', function () {
+                    buscadorInput.value = '';
+                    this.style.display = 'none';
+                    filtrarTabla('');
+                });
+            }
         }
-        
-        // Debounce para evitar búsquedas constantes
-        if (timeoutBusqueda) clearTimeout(timeoutBusqueda);
-        
-        timeoutBusqueda = setTimeout(() => {
-            filtrarTabla(termino);
-        }, 300);
-    });
-    
-    // Evento para limpiar búsqueda
-    if (limpiarBtn) {
-        limpiarBtn.addEventListener('click', function() {
-            buscadorInput.value = '';
-            this.style.display = 'none';
-            filtrarTabla('');
-        });
-    }
-}
 
-// Función para filtrar la tabla
-function filtrarTabla(termino) {
-    if (!datosOriginales || datosOriginales.length === 0) {
-        return;
-    }
-    
-    const terminoBusqueda = termino.toLowerCase().trim();
-    
-    if (terminoBusqueda === '') {
-        // Mostrar todos los datos originales
-        renderizarTablaConDatos(datosOriginales);
-        actualizarContadorResultados(datosOriginales.length, datosOriginales.length);
-        return;
-    }
-    
-    // Filtrar datos
-    const resultados = datosOriginales.filter(operador => {
-        // Buscar en campos del operador
-        const nombreCompleto = `${operador.nombre || ''} ${operador.apellido_paterno || ''} ${operador.apellido_materno || ''}`.toLowerCase();
-        const ci = (operador.ci || '').toLowerCase();
-        const celular = (operador.celular || '').toLowerCase();
-        const recinto = (operador.recinto?.nombre || '').toLowerCase();
-        
-        // Buscar en actas (números)
-        const actasCoinciden = operador.actas?.some(acta => {
-            return (acta.numero || '').toLowerCase().includes(terminoBusqueda);
-        });
-        
-        // Verificar si algún campo coincide
-        return nombreCompleto.includes(terminoBusqueda) ||
-               ci.includes(terminoBusqueda) ||
-               celular.includes(terminoBusqueda) ||
-               recinto.includes(terminoBusqueda) ||
-               actasCoinciden;
-    });
-    
-    // Renderizar resultados filtrados
-    renderizarTablaConDatos(resultados, terminoBusqueda);
-    actualizarContadorResultados(resultados.length, datosOriginales.length);
-}
+        // Función para filtrar la tabla
+        function filtrarTabla(termino) {
+            if (!datosOriginales || datosOriginales.length === 0) {
+                return;
+            }
 
-// Función para renderizar la tabla con los datos
-function renderizarTablaConDatos(operadores, terminoDestacado = '') {
-    const tableBody = document.getElementById('tableBody');
-    const statsContainer = document.getElementById('statsContainer');
-    const operadorCount = document.getElementById('operadorCount');
-    const ultimaActualizacion = document.getElementById('ultimaActualizacion').querySelector('span');
-    
-    if (!operadores || operadores.length === 0) {
-        tableBody.innerHTML = `
+            const terminoBusqueda = termino.toLowerCase().trim();
+
+            if (terminoBusqueda === '') {
+                // Mostrar todos los datos originales
+                renderizarTablaConDatos(datosOriginales);
+                actualizarContadorResultados(datosOriginales.length, datosOriginales.length);
+                return;
+            }
+
+            // Filtrar datos
+            const resultados = datosOriginales.filter(operador => {
+                // Buscar en campos del operador
+                const nombreCompleto = `${operador.nombre || ''} ${operador.apellido_paterno || ''} ${operador.apellido_materno || ''}`.toLowerCase();
+                const ci = (operador.ci || '').toLowerCase();
+                const celular = (operador.celular || '').toLowerCase();
+                const recinto = (operador.recinto?.nombre || '').toLowerCase();
+
+                // Buscar en actas (números)
+                const actasCoinciden = operador.actas?.some(acta => {
+                    return (acta.numero || '').toLowerCase().includes(terminoBusqueda);
+                });
+
+                // Verificar si algún campo coincide
+                return nombreCompleto.includes(terminoBusqueda) ||
+                    ci.includes(terminoBusqueda) ||
+                    celular.includes(terminoBusqueda) ||
+                    recinto.includes(terminoBusqueda) ||
+                    actasCoinciden;
+            });
+
+            // Renderizar resultados filtrados
+            renderizarTablaConDatos(resultados, terminoBusqueda);
+            actualizarContadorResultados(resultados.length, datosOriginales.length);
+        }
+
+        // Función para renderizar la tabla con los datos
+        function renderizarTablaConDatos(operadores, terminoDestacado = '') {
+            const tableBody = document.getElementById('tableBody');
+            const statsContainer = document.getElementById('statsContainer');
+            const operadorCount = document.getElementById('operadorCount');
+            const ultimaActualizacion = document.getElementById('ultimaActualizacion').querySelector('span');
+
+            if (!operadores || operadores.length === 0) {
+                tableBody.innerHTML = `
              <tr>
                 <td colspan="5">
                     <div class="no-data">
@@ -896,49 +894,49 @@ function renderizarTablaConDatos(operadores, terminoDestacado = '') {
                  </td>
              </tr>
         `;
-        statsContainer.style.display = 'none';
-        operadorCount.textContent = '(0 operadores)';
-        return;
-    }
-    
-    statsContainer.style.display = 'grid';
-    
-    let rows = '';
-    let totalTransmitidos = 0;
-    let totalEnviadoNoRevisado = 0;
-    let totalSinEnviar = 0;
-    let totalRevisadoRechazado = 0;
-    
-    operadores.forEach(op => {
-        // Contar estados para estadísticas
-        if (op.actas && Array.isArray(op.actas)) {
-            op.actas.forEach(acta => {
-                switch(acta.estado) {
-                    case 'TRANSMITIDO':
-                        totalTransmitidos++;
-                        break;
-                    case 'ENVIADO_NO_REVISADO':
-                        totalEnviadoNoRevisado++;
-                        break;
-                    case 'SIN_ENVIAR':
-                        totalSinEnviar++;
-                        break;
-                    case 'REVISADO_RECHAZADO':
-                        totalRevisadoRechazado++;
-                        break;
+                statsContainer.style.display = 'none';
+                operadorCount.textContent = '(0 operadores)';
+                return;
+            }
+
+            statsContainer.style.display = 'grid';
+
+            let rows = '';
+            let totalTransmitidos = 0;
+            let totalEnviadoNoRevisado = 0;
+            let totalSinEnviar = 0;
+            let totalRevisadoRechazado = 0;
+
+            operadores.forEach(op => {
+                // Contar estados para estadísticas
+                if (op.actas && Array.isArray(op.actas)) {
+                    op.actas.forEach(acta => {
+                        switch (acta.estado) {
+                            case 'TRANSMITIDO':
+                                totalTransmitidos++;
+                                break;
+                            case 'ENVIADO_NO_REVISADO':
+                                totalEnviadoNoRevisado++;
+                                break;
+                            case 'SIN_ENVIAR':
+                                totalSinEnviar++;
+                                break;
+                            case 'REVISADO_RECHAZADO':
+                                totalRevisadoRechazado++;
+                                break;
+                        }
+                    });
                 }
-            });
-        }
-        
-        const nombreCompleto = `${op.nombre || ''} ${op.apellido_paterno || ''} ${op.apellido_materno || ''}`.trim() || 'N/A';
-        
-        // Resaltar texto si hay término de búsqueda
-        const nombreResaltado = terminoDestacado ? resaltarTexto(nombreCompleto, terminoDestacado) : nombreCompleto;
-        const ciResaltado = terminoDestacado ? resaltarTexto(op.ci || 'N/A', terminoDestacado) : (op.ci || 'N/A');
-        const celularResaltado = terminoDestacado ? resaltarTexto(op.celular || 'N/A', terminoDestacado) : (op.celular || 'N/A');
-        const recintoResaltado = terminoDestacado ? resaltarTexto(op.recinto?.nombre || 'N/A', terminoDestacado) : (op.recinto?.nombre || 'N/A');
-        
-        rows += `
+
+                const nombreCompleto = `${op.nombre || ''} ${op.apellido_paterno || ''} ${op.apellido_materno || ''}`.trim() || 'N/A';
+
+                // Resaltar texto si hay término de búsqueda
+                const nombreResaltado = terminoDestacado ? resaltarTexto(nombreCompleto, terminoDestacado) : nombreCompleto;
+                const ciResaltado = terminoDestacado ? resaltarTexto(op.ci || 'N/A', terminoDestacado) : (op.ci || 'N/A');
+                const celularResaltado = terminoDestacado ? resaltarTexto(op.celular || 'N/A', terminoDestacado) : (op.celular || 'N/A');
+                const recintoResaltado = terminoDestacado ? resaltarTexto(op.recinto?.nombre || 'N/A', terminoDestacado) : (op.recinto?.nombre || 'N/A');
+
+                rows += `
             <tr>
                 <td><strong>${nombreResaltado}</strong></td>
                 <td>${ciResaltado}</td>
@@ -951,73 +949,73 @@ function renderizarTablaConDatos(operadores, terminoDestacado = '') {
                 <td>${renderizarActasConEventos(op, op.actas, terminoDestacado)}</td>
             </tr>
         `;
-    });
-    
-    tableBody.innerHTML = rows;
-    
-    // Actualizar estadísticas
-    document.getElementById('totalTransmitidos').textContent = totalTransmitidos;
-    document.getElementById('totalEnviadoNoRevisado').textContent = totalEnviadoNoRevisado;
-    document.getElementById('totalSinEnviar').textContent = totalSinEnviar;
-    document.getElementById('totalRevisadoRechazado').textContent = totalRevisadoRechazado;
-    
-    operadorCount.textContent = `(${operadores.length} operadores)`;
-    
-    // Actualizar hora de última actualización
-    const ahora = new Date();
-    if (ultimaActualizacion) {
-        ultimaActualizacion.textContent = `Última actualización ${ahora.toLocaleTimeString()}`;
-    }
-}
+            });
 
-// Función para resaltar texto
-function resaltarTexto(texto, termino) {
-    if (!termino || !texto) return texto;
-    
-    const regex = new RegExp(`(${escapeRegex(termino)})`, 'gi');
-    return texto.replace(regex, '<span class="resultado-destacado">$1</span>');
-}
+            tableBody.innerHTML = rows;
 
-// Función para escapar caracteres especiales en regex
-function escapeRegex(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+            // Actualizar estadísticas
+            document.getElementById('totalTransmitidos').textContent = totalTransmitidos;
+            document.getElementById('totalEnviadoNoRevisado').textContent = totalEnviadoNoRevisado;
+            document.getElementById('totalSinEnviar').textContent = totalSinEnviar;
+            document.getElementById('totalRevisadoRechazado').textContent = totalRevisadoRechazado;
 
-// Función para actualizar el contador de resultados
-function actualizarContadorResultados(mostrados, total) {
-    const resultadosSpan = document.getElementById('resultadosCount');
-    if (resultadosSpan) {
-        if (mostrados === total) {
-            resultadosSpan.innerHTML = `<i class="fas fa-users"></i> Mostrando ${mostrados} operadores`;
-        } else {
-            resultadosSpan.innerHTML = `<i class="fas fa-search"></i> Mostrando ${mostrados} de ${total} operadores`;
-        }
-    }
-}
+            operadorCount.textContent = `(${operadores.length} operadores)`;
 
-// Modificar la función renderizarActasConEventos para soportar resaltado
-function renderizarActasConEventos(operador, actas, terminoDestacado = '') {
-    let html = '<div class="actas-container">';
-    
-    if (actas && actas.length > 0) {
-        // Ordenar actas por número
-        const actasOrdenadas = [...actas].sort((a, b) => {
-            return (parseInt(a.numero) || 0) - (parseInt(b.numero) || 0);
-        });
-        
-        actasOrdenadas.forEach(acta => {
-            const actaClass = getActaClass(acta.estado);
-            const tooltip = getActaTooltip(acta);
-            const tieneObs = acta.observacion && acta.observacion.trim() !== '';
-            const nombreCompleto = `${operador.nombre || ''} ${operador.apellido_paterno || ''}`.trim();
-            
-            // Resaltar número de acta si coincide con la búsqueda
-            let numeroActa = acta.numero;
-            if (terminoDestacado && numeroActa && numeroActa.toLowerCase().includes(terminoDestacado.toLowerCase())) {
-                numeroActa = resaltarTexto(numeroActa, terminoDestacado);
+            // Actualizar hora de última actualización
+            const ahora = new Date();
+            if (ultimaActualizacion) {
+                ultimaActualizacion.textContent = `Última actualización ${ahora.toLocaleTimeString()}`;
             }
-            
-            html += `
+        }
+
+        // Función para resaltar texto
+        function resaltarTexto(texto, termino) {
+            if (!termino || !texto) return texto;
+
+            const regex = new RegExp(`(${escapeRegex(termino)})`, 'gi');
+            return texto.replace(regex, '<span class="resultado-destacado">$1</span>');
+        }
+
+        // Función para escapar caracteres especiales en regex
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Función para actualizar el contador de resultados
+        function actualizarContadorResultados(mostrados, total) {
+            const resultadosSpan = document.getElementById('resultadosCount');
+            if (resultadosSpan) {
+                if (mostrados === total) {
+                    resultadosSpan.innerHTML = `<i class="fas fa-users"></i> Mostrando ${mostrados} operadores`;
+                } else {
+                    resultadosSpan.innerHTML = `<i class="fas fa-search"></i> Mostrando ${mostrados} de ${total} operadores`;
+                }
+            }
+        }
+
+        // Modificar la función renderizarActasConEventos para soportar resaltado
+        function renderizarActasConEventos(operador, actas, terminoDestacado = '') {
+            let html = '<div class="actas-container">';
+
+            if (actas && actas.length > 0) {
+                // Ordenar actas por número
+                const actasOrdenadas = [...actas].sort((a, b) => {
+                    return (parseInt(a.numero) || 0) - (parseInt(b.numero) || 0);
+                });
+
+                actasOrdenadas.forEach(acta => {
+                    const actaClass = getActaClass(acta.estado);
+                    const tooltip = getActaTooltip(acta);
+                    const tieneObs = acta.observacion && acta.observacion.trim() !== '';
+                    const nombreCompleto = `${operador.nombre || ''} ${operador.apellido_paterno || ''}`.trim();
+
+                    // Resaltar número de acta si coincide con la búsqueda
+                    let numeroActa = acta.numero;
+                    if (terminoDestacado && numeroActa && numeroActa.toLowerCase().includes(terminoDestacado.toLowerCase())) {
+                        numeroActa = resaltarTexto(numeroActa, terminoDestacado);
+                    }
+
+                    html += `
                 <div class="acta-wrapper">
                     <div 
                         class="acta-box ${actaClass}" 
@@ -1040,20 +1038,20 @@ function renderizarActasConEventos(operador, actas, terminoDestacado = '') {
                     </div>
                 </div>
             `;
+                });
+            } else {
+                html += '<span style="color: #9e9e9e; font-size: 12px;">Sin actas</span>';
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        // Inicializar buscador al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            inicializarBuscador();
+            loadUserData();
+            cargarTransmisiones();
         });
-    } else {
-        html += '<span style="color: #9e9e9e; font-size: 12px;">Sin actas</span>';
-    }
-    
-    html += '</div>';
-    return html;
-}
 
-// Inicializar buscador al cargar la página
-document.addEventListener('DOMContentLoaded', () => {
-    inicializarBuscador();
-    loadUserData();
-    cargarTransmisiones();
-});
-
-</script>
+    </script>

@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Transmisiones - Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../../static/navbar.css">
-    <link rel="stylesheet" href="../../static/transmisiones.css">
+    {% include "meta_tags.html" %}
+    <link rel="stylesheet" href="../../static/navbar.css?v=2026.03.22">
+    <link rel="stylesheet" href="../../static/transmisiones.css?v=2026.03.22">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-    <script src="../../static/navbar.js"></script>
+    <script src="../../static/navbar.js?v=2026.03.22"></script>
     <div id="navbar"></div>
 
     <div class="main-container">
@@ -87,7 +90,7 @@
             <h3><i class="fas fa-users"></i> Monitores</h3>
             <span class="badge-count" id="monitoresCount">0</span>
         </div>
-        
+
         <div class="monitores-selector-wrapper">
             <div class="selector-group">
                 <label><i class="fas fa-user-check"></i> Seleccionar Monitor</label>
@@ -98,7 +101,7 @@
         </div>
 
         <!-- Resultados del monitor (se mostrarán después de cargar) -->
-        <div id="monitorResultados" style="display: none;">            
+        <div id="monitorResultados" style="display: none;">
             <!-- Sección de actas del monitor -->
             <div class="monitor-actas-section">
                 <h4><i class="fas fa-file-alt"></i> Actas del Monitor</h4>
@@ -108,150 +111,150 @@
 
     </div>
 
-<script>
+    <script>
 
-let generalChart = null;
-let departamentalChart = null;
-let municipalChart = null;
+        let generalChart = null;
+        let departamentalChart = null;
+        let municipalChart = null;
 
-let pieChart = null;
-let refreshInterval = null;
-let currentReporteId = null;
+        let pieChart = null;
+        let refreshInterval = null;
+        let currentReporteId = null;
 
-// cargar el Navbar
-function loadNavbar() {
-    fetch('/static/navbar.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('navbar').innerHTML = data;
+        // cargar el Navbar
+        function loadNavbar() {
+            fetch('/static/navbar.html?v=2026.03.22')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('navbar').innerHTML = data;
 
-            if (window.initNavbar) {
-                window.initNavbar();
-            }
-        })
-        .catch(error => {
-            console.error('Error al cargar navbar:', error);
-            document.getElementById('navbar').innerHTML = '<div class="navbar">Error al cargar navbar</div>';
-        });
-}
-
-// Cargar lista de transmisiones
-async function cargarTransmisiones() {
-    const select = document.getElementById('transmisionSelect');
-    const cargarBtn = document.getElementById('cargarBtn');
-    
-    try {
-        select.disabled = true;
-        cargarBtn.disabled = true;
-        select.innerHTML = '<option value="">Cargando transmisiones...</option>';
-        
-        const response = await fetch(`${API_BASE_URL}/api/transmisiones/`, {
-            headers: { 'X-CSRFToken': getCSRFToken() }
-        });
-        
-        if (!response.ok) throw new Error('Error al cargar transmisiones');
-        
-        const transmisiones = await response.json();
-        
-        if (!transmisiones || transmisiones.length === 0) {
-            select.innerHTML = '<option value="">No hay transmisiones disponibles</option>';
-            return;
+                    if (window.initNavbar) {
+                        window.initNavbar();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar navbar:', error);
+                    document.getElementById('navbar').innerHTML = '<div class="navbar">Error al cargar navbar</div>';
+                });
         }
-        
-        let options = '<option value="">-- Seleccione una transmisión --</option>';
-        transmisiones.forEach(t => {
-            options += `<option value="${t.id}">${t.descripcion} - ${t.fecha} ${t.hora}</option>`;
-        });
-        
-        select.innerHTML = options;
-        
-    } catch (error) {
-        console.error('Error:', error);
-        select.innerHTML = '<option value="">Error al cargar transmisiones</option>';
-    } finally {
-        select.disabled = false;
-        cargarBtn.disabled = false;
-    }
-}
 
-// Cargar estadísticas de la transmisión seleccionada
-async function cargarEstadisticas() {
-    const select = document.getElementById('transmisionSelect');
-    const reporteId = select.value;
-    const cargarBtn = document.getElementById('cargarBtn');
-    const resultadosContainer = document.getElementById('resultadosContainer');
-    const initialMessage = document.getElementById('initialMessage');
-    
-    if (!reporteId) {
-        alert('Por favor seleccione una transmisión');
-        return;
-    }
-    
-    currentReporteId = reporteId;
-    
-    // Mostrar loader
-    cargarBtn.disabled = true;
-    cargarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
-    resultadosContainer.style.display = 'none';
-    initialMessage.style.display = 'none';
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/transmision-reporte/${reporteId}/estadisticas/`, {
-            headers: { 'X-CSRFToken': getCSRFToken() }
-        });
-        console.log(response);
-        
-        if (!response.ok) throw new Error('Error al cargar estadísticas');
-        
-        const data = await response.json();
-        console.log(data);
-        // Mostrar resultados
-        resultadosContainer.style.display = 'block';
-        
-        // Actualizar tarjetas
-        actualizarTarjetas(data);
-        
-        // Actualizar gráfico
-        actualizarGraficoGeneral(data.general);
-        actualizarGraficoDepartamental(data.departamentales);
-        actualizarGraficoMunicipal(data.municipales);
-        
-        // Iniciar actualización en tiempo real (cada 30 segundos)
-        iniciarActualizacionTiempoReal();
-        
-    } catch (error) {
-        console.error('Error:', error);
-        initialMessage.style.display = 'block';
-        initialMessage.innerHTML = `
+        // Cargar lista de transmisiones
+        async function cargarTransmisiones() {
+            const select = document.getElementById('transmisionSelect');
+            const cargarBtn = document.getElementById('cargarBtn');
+
+            try {
+                select.disabled = true;
+                cargarBtn.disabled = true;
+                select.innerHTML = '<option value="">Cargando transmisiones...</option>';
+
+                const response = await fetch(`${API_BASE_URL}/api/transmisiones/`, {
+                    headers: { 'X-CSRFToken': getCSRFToken() }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar transmisiones');
+
+                const transmisiones = await response.json();
+
+                if (!transmisiones || transmisiones.length === 0) {
+                    select.innerHTML = '<option value="">No hay transmisiones disponibles</option>';
+                    return;
+                }
+
+                let options = '<option value="">-- Seleccione una transmisión --</option>';
+                transmisiones.forEach(t => {
+                    options += `<option value="${t.id}">${t.descripcion} - ${t.fecha} ${t.hora}</option>`;
+                });
+
+                select.innerHTML = options;
+
+            } catch (error) {
+                console.error('Error:', error);
+                select.innerHTML = '<option value="">Error al cargar transmisiones</option>';
+            } finally {
+                select.disabled = false;
+                cargarBtn.disabled = false;
+            }
+        }
+
+        // Cargar estadísticas de la transmisión seleccionada
+        async function cargarEstadisticas() {
+            const select = document.getElementById('transmisionSelect');
+            const reporteId = select.value;
+            const cargarBtn = document.getElementById('cargarBtn');
+            const resultadosContainer = document.getElementById('resultadosContainer');
+            const initialMessage = document.getElementById('initialMessage');
+
+            if (!reporteId) {
+                alert('Por favor seleccione una transmisión');
+                return;
+            }
+
+            currentReporteId = reporteId;
+
+            // Mostrar loader
+            cargarBtn.disabled = true;
+            cargarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+            resultadosContainer.style.display = 'none';
+            initialMessage.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/transmision-reporte/${reporteId}/estadisticas/`, {
+                    headers: { 'X-CSRFToken': getCSRFToken() }
+                });
+                console.log(response);
+
+                if (!response.ok) throw new Error('Error al cargar estadísticas');
+
+                const data = await response.json();
+                console.log(data);
+                // Mostrar resultados
+                resultadosContainer.style.display = 'block';
+
+                // Actualizar tarjetas
+                actualizarTarjetas(data);
+
+                // Actualizar gráfico
+                actualizarGraficoGeneral(data.general);
+                actualizarGraficoDepartamental(data.departamentales);
+                actualizarGraficoMunicipal(data.municipales);
+
+                // Iniciar actualización en tiempo real (cada 30 segundos)
+                iniciarActualizacionTiempoReal();
+
+            } catch (error) {
+                console.error('Error:', error);
+                initialMessage.style.display = 'block';
+                initialMessage.innerHTML = `
             <i class="fas fa-exclamation-triangle"></i>
             <p>Error al cargar las estadísticas. Por favor, intente nuevamente.</p>
         `;
-        resultadosContainer.style.display = 'none';
-    } finally {
-        cargarBtn.disabled = false;
-        cargarBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Cargar Datos';
-    }
-}
+                resultadosContainer.style.display = 'none';
+            } finally {
+                cargarBtn.disabled = false;
+                cargarBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Cargar Datos';
+            }
+        }
 
-// Actualizar tarjetas de estados
-function actualizarTarjetas(data) {
-    const statsGrid = document.getElementById('statsGrid');
-    const conteo = data.general.conteo || {};
-    const porcentajes = data.general.porcentajes || {};
-    
-    const estados = [
-        { key: 'TRANSMITIDO', nombre: 'Transmitido', icono: 'fa-paper-plane', color: '#2196f3', bg: '#e3f2fd' },
-        { key: 'ENVIADO_NO_REVISADO', nombre: 'Enviado no revisado', icono: 'fa-clock', color: '#4caf50', bg: '#e8f5e9' },
-        { key: 'SIN_ENVIAR', nombre: 'Sin enviar', icono: 'fa-hourglass', color: '#ff9800', bg: '#fff3e0' },
-        { key: 'REVISADO_RECHAZADO', nombre: 'Revisado rechazado', icono: 'fa-times-circle', color: '#f44336', bg: '#ffebee' }
-    ];
+        // Actualizar tarjetas de estados
+        function actualizarTarjetas(data) {
+            const statsGrid = document.getElementById('statsGrid');
+            const conteo = data.general.conteo || {};
+            const porcentajes = data.general.porcentajes || {};
 
-    let html = '';
-    estados.forEach(estado => {
-        const cantidad = conteo[estado.key] || 0;
-        const porcentaje = porcentajes[estado.key] || 0;
-        
-        html += `
+            const estados = [
+                { key: 'TRANSMITIDO', nombre: 'Transmitido', icono: 'fa-paper-plane', color: '#2196f3', bg: '#e3f2fd' },
+                { key: 'ENVIADO_NO_REVISADO', nombre: 'Enviado no revisado', icono: 'fa-clock', color: '#4caf50', bg: '#e8f5e9' },
+                { key: 'SIN_ENVIAR', nombre: 'Sin enviar', icono: 'fa-hourglass', color: '#ff9800', bg: '#fff3e0' },
+                { key: 'REVISADO_RECHAZADO', nombre: 'Revisado rechazado', icono: 'fa-times-circle', color: '#f44336', bg: '#ffebee' }
+            ];
+
+            let html = '';
+            estados.forEach(estado => {
+                const cantidad = conteo[estado.key] || 0;
+                const porcentaje = porcentajes[estado.key] || 0;
+
+                html += `
             <div class="stat-card ${getCardClass(estado.key)}">
                 <div class="stat-header">
                     <div class="stat-icon">
@@ -263,321 +266,321 @@ function actualizarTarjetas(data) {
                 <div class="stat-label">${estado.nombre}</div>
             </div>
         `;
-    });
-    
-    statsGrid.innerHTML = html;
-    // Actualizar total de actas
-    document.getElementById('totalGeneral').textContent = (data.general.total || 0).toLocaleString();
-}
+            });
 
-function getCardClass(estado) {
-    switch(estado) {
-        case 'TRANSMITIDO': return 'transmitido';
-        case 'ENVIADO_NO_REVISADO': return 'enviado-no-revisado';
-        case 'SIN_ENVIAR': return 'sin-enviar';
-        case 'REVISADO_RECHAZADO': return 'revisado-rechazado';
-        default: return '';
-    }
-}
-
-// Actualizar gráfico General
-function actualizarGraficoGeneral(data) {
-    const ctx = document.getElementById('generalChart').getContext('2d');
-    const conteo = data?.conteo || {};
-    const total = data?.total || 0;
-    
-    const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
-    const values = [
-        conteo['TRANSMITIDO'] || 0,
-        conteo['ENVIADO_NO_REVISADO'] || 0,
-        conteo['SIN_ENVIAR'] || 0,
-        conteo['REVISADO_RECHAZADO'] || 0
-    ];
-    const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
-    
-    document.getElementById('totalGeneral').textContent = total.toLocaleString();
-    
-    if (generalChart) {
-        generalChart.data.datasets[0].data = values;
-        generalChart.update();
-    } else {
-        generalChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: { size: 11 },
-                            padding: 10,
-                            usePointStyle: true,
-                            pointStyle: 'circle'
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
-                                return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-}
-
-// Actualizar gráfico Departamental
-function actualizarGraficoDepartamental(data) {
-    const ctx = document.getElementById('departamentalChart').getContext('2d');
-    const conteo = data?.conteo || {};
-    const total = data?.total || 0;
-    
-    const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
-    const values = [
-        conteo['TRANSMITIDO'] || 0,
-        conteo['ENVIADO_NO_REVISADO'] || 0,
-        conteo['SIN_ENVIAR'] || 0,
-        conteo['REVISADO_RECHAZADO'] || 0
-    ];
-    const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
-    
-    document.getElementById('totalDepartamental').textContent = total.toLocaleString();
-    
-    if (departamentalChart) {
-        departamentalChart.data.datasets[0].data = values;
-        departamentalChart.update();
-    } else {
-        departamentalChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: { size: 10 },
-                            padding: 8,
-                            usePointStyle: true,
-                            pointStyle: 'circle',
-                            boxWidth: 8
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
-                                return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-}
-
-// Actualizar gráfico Municipal
-function actualizarGraficoMunicipal(data) {
-    const ctx = document.getElementById('municipalChart').getContext('2d');
-    const conteo = data?.conteo || {};
-    const total = data?.total || 0;
-    
-    const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
-    const values = [
-        conteo['TRANSMITIDO'] || 0,
-        conteo['ENVIADO_NO_REVISADO'] || 0,
-        conteo['SIN_ENVIAR'] || 0,
-        conteo['REVISADO_RECHAZADO'] || 0
-    ];
-    const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
-    
-    document.getElementById('totalMunicipal').textContent = total.toLocaleString();
-    
-    if (municipalChart) {
-        municipalChart.data.datasets[0].data = values;
-        municipalChart.update();
-    } else {
-        municipalChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: { size: 10 },
-                            padding: 8,
-                            usePointStyle: true,
-                            pointStyle: 'circle',
-                            boxWidth: 8
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
-                                return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-}
-
-// Inicializar selector de monitores con evento change
-function inicializarMonitores() {
-    cargarMonitores();
-    
-    // Agregar evento change al select
-    const monitorSelect = document.getElementById('monitorSelect');
-    monitorSelect.addEventListener('change', (e) => {
-        const monitorId = e.target.value;
-        if (monitorId) {
-            cargarEstadisticasPorMonitor(monitorId);
-        } else {
-            document.getElementById('monitorResultados').style.display = 'none';
+            statsGrid.innerHTML = html;
+            // Actualizar total de actas
+            document.getElementById('totalGeneral').textContent = (data.general.total || 0).toLocaleString();
         }
-    });
-}
-// Función para obtener la clase CSS según el estado
-function getMonitorActaClass(estado) {
-    const estados = {
-        'TRANSMITIDO': 'monitor-acta-transmitido',
-        'ENVIADO_NO_REVISADO': 'monitor-acta-enviado-no-revisado',
-        'SIN_ENVIAR': 'monitor-acta-sin-enviar',
-        'REVISADO_RECHAZADO': 'monitor-acta-revisado-rechazado'
-    };
-    return estados[estado] || 'monitor-acta-sin-enviar';
-}
 
-// Función para obtener el nombre del estado
-function getEstadoNombre(estado) {
-    const estados = {
-        'TRANSMITIDO': 'Transmitido',
-        'ENVIADO_NO_REVISADO': 'Enviado no revisado',
-        'SIN_ENVIAR': 'Sin enviar',
-        'REVISADO_RECHAZADO': 'Revisado rechazado'
-    };
-    return estados[estado] || estado;
-}
+        function getCardClass(estado) {
+            switch (estado) {
+                case 'TRANSMITIDO': return 'transmitido';
+                case 'ENVIADO_NO_REVISADO': return 'enviado-no-revisado';
+                case 'SIN_ENVIAR': return 'sin-enviar';
+                case 'REVISADO_RECHAZADO': return 'revisado-rechazado';
+                default: return '';
+            }
+        }
 
-// Función para cargar estadísticas cuando se selecciona un monitor
-async function cargarEstadisticasPorMonitor(monitorId) {
-    const monitorResultados = document.getElementById('monitorResultados');
-    const monitorSelect = document.getElementById('monitorSelect');
-    
-    if (!monitorId) {
-        monitorResultados.style.display = 'none';
-        return;
-    }
-    
-    if (!currentReporteId) {
-        console.error('No hay transmisión seleccionada');
-        return;
-    }
-    
-    // Mostrar loader
-    monitorResultados.style.display = 'block';
-    monitorResultados.innerHTML = `
+        // Actualizar gráfico General
+        function actualizarGraficoGeneral(data) {
+            const ctx = document.getElementById('generalChart').getContext('2d');
+            const conteo = data?.conteo || {};
+            const total = data?.total || 0;
+
+            const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
+            const values = [
+                conteo['TRANSMITIDO'] || 0,
+                conteo['ENVIADO_NO_REVISADO'] || 0,
+                conteo['SIN_ENVIAR'] || 0,
+                conteo['REVISADO_RECHAZADO'] || 0
+            ];
+            const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
+
+            document.getElementById('totalGeneral').textContent = total.toLocaleString();
+
+            if (generalChart) {
+                generalChart.data.datasets[0].data = values;
+                generalChart.update();
+            } else {
+                generalChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: backgroundColors,
+                            borderWidth: 0,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 11 },
+                                    padding: 10,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle'
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                        return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Actualizar gráfico Departamental
+        function actualizarGraficoDepartamental(data) {
+            const ctx = document.getElementById('departamentalChart').getContext('2d');
+            const conteo = data?.conteo || {};
+            const total = data?.total || 0;
+
+            const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
+            const values = [
+                conteo['TRANSMITIDO'] || 0,
+                conteo['ENVIADO_NO_REVISADO'] || 0,
+                conteo['SIN_ENVIAR'] || 0,
+                conteo['REVISADO_RECHAZADO'] || 0
+            ];
+            const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
+
+            document.getElementById('totalDepartamental').textContent = total.toLocaleString();
+
+            if (departamentalChart) {
+                departamentalChart.data.datasets[0].data = values;
+                departamentalChart.update();
+            } else {
+                departamentalChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: backgroundColors,
+                            borderWidth: 0,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 10 },
+                                    padding: 8,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    boxWidth: 8
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                        return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Actualizar gráfico Municipal
+        function actualizarGraficoMunicipal(data) {
+            const ctx = document.getElementById('municipalChart').getContext('2d');
+            const conteo = data?.conteo || {};
+            const total = data?.total || 0;
+
+            const labels = ['Transmitido', 'Enviado no revisado', 'Sin enviar', 'Revisado rechazado'];
+            const values = [
+                conteo['TRANSMITIDO'] || 0,
+                conteo['ENVIADO_NO_REVISADO'] || 0,
+                conteo['SIN_ENVIAR'] || 0,
+                conteo['REVISADO_RECHAZADO'] || 0
+            ];
+            const backgroundColors = ['#2196f3', '#4caf50', '#ff9800', '#f44336'];
+
+            document.getElementById('totalMunicipal').textContent = total.toLocaleString();
+
+            if (municipalChart) {
+                municipalChart.data.datasets[0].data = values;
+                municipalChart.update();
+            } else {
+                municipalChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: backgroundColors,
+                            borderWidth: 0,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 10 },
+                                    padding: 8,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    boxWidth: 8
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const porcentaje = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                        return `${label}: ${value.toLocaleString()} actas (${porcentaje}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Inicializar selector de monitores con evento change
+        function inicializarMonitores() {
+            cargarMonitores();
+
+            // Agregar evento change al select
+            const monitorSelect = document.getElementById('monitorSelect');
+            monitorSelect.addEventListener('change', (e) => {
+                const monitorId = e.target.value;
+                if (monitorId) {
+                    cargarEstadisticasPorMonitor(monitorId);
+                } else {
+                    document.getElementById('monitorResultados').style.display = 'none';
+                }
+            });
+        }
+        // Función para obtener la clase CSS según el estado
+        function getMonitorActaClass(estado) {
+            const estados = {
+                'TRANSMITIDO': 'monitor-acta-transmitido',
+                'ENVIADO_NO_REVISADO': 'monitor-acta-enviado-no-revisado',
+                'SIN_ENVIAR': 'monitor-acta-sin-enviar',
+                'REVISADO_RECHAZADO': 'monitor-acta-revisado-rechazado'
+            };
+            return estados[estado] || 'monitor-acta-sin-enviar';
+        }
+
+        // Función para obtener el nombre del estado
+        function getEstadoNombre(estado) {
+            const estados = {
+                'TRANSMITIDO': 'Transmitido',
+                'ENVIADO_NO_REVISADO': 'Enviado no revisado',
+                'SIN_ENVIAR': 'Sin enviar',
+                'REVISADO_RECHAZADO': 'Revisado rechazado'
+            };
+            return estados[estado] || estado;
+        }
+
+        // Función para cargar estadísticas cuando se selecciona un monitor
+        async function cargarEstadisticasPorMonitor(monitorId) {
+            const monitorResultados = document.getElementById('monitorResultados');
+            const monitorSelect = document.getElementById('monitorSelect');
+
+            if (!monitorId) {
+                monitorResultados.style.display = 'none';
+                return;
+            }
+
+            if (!currentReporteId) {
+                console.error('No hay transmisión seleccionada');
+                return;
+            }
+
+            // Mostrar loader
+            monitorResultados.style.display = 'block';
+            monitorResultados.innerHTML = `
         <div class="loader-container">
             <div class="loader"></div>
             <p style="margin-top: 15px;">Cargando datos del monitor...</p>
         </div>
     `;
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/monitor/${monitorId}/transmision/${currentReporteId}/actas/`, {
-            headers: { 'X-CSRFToken': getCSRFToken() }
-        });
-        
-        if (!response.ok) throw new Error('Error al cargar estadísticas');
-        
-        const operadores = await response.json();
-        
-        // Reconstruir el HTML de resultados
-        monitorResultados.innerHTML = `
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/monitor/${monitorId}/transmision/${currentReporteId}/actas/`, {
+                    headers: { 'X-CSRFToken': getCSRFToken() }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar estadísticas');
+
+                const operadores = await response.json();
+
+                // Reconstruir el HTML de resultados
+                monitorResultados.innerHTML = `
             <div class="monitor-actas-section">
                 <h4><i class="fas fa-file-alt"></i> Actas del Monitor</h4>
                 <div id="monitorActasContainer" class="monitor-actas-container"></div>
             </div>
         `;
-        
-        // Renderizar actas del monitor
-        renderizarActasMonitor(operadores);
-        
-    } catch (error) {
-        console.error('Error:', error);
-        monitorResultados.innerHTML = `
+
+                // Renderizar actas del monitor
+                renderizarActasMonitor(operadores);
+
+            } catch (error) {
+                console.error('Error:', error);
+                monitorResultados.innerHTML = `
             <div class="no-data">
                 <i class="fas fa-exclamation-triangle" style="color: #f44336;"></i>
                 <p>Error al cargar los datos del monitor</p>
             </div>
         `;
-    }
-}
+            }
+        }
 
-// Función para renderizar las actas del monitor
-function renderizarActasMonitor(operadores) {
-    const container = document.getElementById('monitorActasContainer');
-    
-    if (!operadores || operadores.length === 0) {
-        container.innerHTML = `
+        // Función para renderizar las actas del monitor
+        function renderizarActasMonitor(operadores) {
+            const container = document.getElementById('monitorActasContainer');
+
+            if (!operadores || operadores.length === 0) {
+                container.innerHTML = `
             <div class="monitor-actas-empty">
                 <i class="fas fa-file-alt"></i>
                 <p>No hay actas asignadas a este monitor</p>
             </div>
         `;
-        return;
-    }
-    
-    let html = '';
-    
-    operadores.forEach(operador => {
-        const nombreCompleto = `${operador.nombre} ${operador.apellido_paterno || ''} ${operador.apellido_materno || ''}` || 'Sin nombre';
-        const recintoNombre = operador.recinto?.nombre || 'Sin recinto';
-        
-        html += `
+                return;
+            }
+
+            let html = '';
+
+            operadores.forEach(operador => {
+                const nombreCompleto = `${operador.nombre} ${operador.apellido_paterno || ''} ${operador.apellido_materno || ''}` || 'Sin nombre';
+                const recintoNombre = operador.recinto?.nombre || 'Sin recinto';
+
+                html += `
             <div class="operador-group">
                 <div class="operador-header">
                     <div class="operador-nombre">
@@ -591,21 +594,21 @@ function renderizarActasMonitor(operadores) {
                 </div>
                 <div class="operador-actas">
         `;
-        
-        if (operador.actas && operador.actas.length > 0) {
-            // Ordenar actas por número
-            const actasOrdenadas = [...operador.actas].sort((a, b) => {
-                return (parseInt(a.acta_numero) || 0) - (parseInt(b.acta_numero) || 0);
-            });
-            
-            actasOrdenadas.forEach(acta => {
-                const actaClass = getMonitorActaClass(acta.estado);
-                const estadoNombre = getEstadoNombre(acta.estado);
-                
-                // Tooltip con información completa
-                const tooltip = `${nombreCompleto} - ${recintoNombre}\nActa: ${acta.acta_numero}\nEstado: ${estadoNombre}`;
-                
-                html += `
+
+                if (operador.actas && operador.actas.length > 0) {
+                    // Ordenar actas por número
+                    const actasOrdenadas = [...operador.actas].sort((a, b) => {
+                        return (parseInt(a.acta_numero) || 0) - (parseInt(b.acta_numero) || 0);
+                    });
+
+                    actasOrdenadas.forEach(acta => {
+                        const actaClass = getMonitorActaClass(acta.estado);
+                        const estadoNombre = getEstadoNombre(acta.estado);
+
+                        // Tooltip con información completa
+                        const tooltip = `${nombreCompleto} - ${recintoNombre}\nActa: ${acta.acta_numero}\nEstado: ${estadoNombre}`;
+
+                        html += `
                     <div class="monitor-acta-box ${actaClass}" 
                          data-tooltip="${escapeHtml(tooltip)}"
                          data-reporte-id="${acta.reporte_id}"
@@ -614,113 +617,113 @@ function renderizarActasMonitor(operadores) {
                         ${acta.acta_numero}
                     </div>
                 `;
-            });
-        } else {
-            html += '<span style="color: #9e9e9e; font-size: 12px;">Sin actas asignadas</span>';
-        }
-        
-        html += `
+                    });
+                } else {
+                    html += '<span style="color: #9e9e9e; font-size: 12px;">Sin actas asignadas</span>';
+                }
+
+                html += `
                 </div>
             </div>
         `;
-    });
-    
-    container.innerHTML = html;
-}
+            });
 
-// Función para ver detalle del acta (opcional)
-function verDetalleActa(reporteId, actaNumero) {
-    console.log(`Ver detalle del acta: ${actaNumero} (Reporte ID: ${reporteId})`);
-    // Aquí puedes agregar la lógica para mostrar un modal con detalles del acta
-    alert(`Acta: ${actaNumero}\nReporte ID: ${reporteId}`);
-}
-
-// Función de escape HTML para evitar inyección
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Cargar lista de monitores
-async function cargarMonitores() {
-    const monitorSelect = document.getElementById('monitorSelect');
-    
-    try {
-        monitorSelect.disabled = true;
-        monitorSelect.innerHTML = '<option value="">Cargando monitores...</option>';
-        
-        const response = await fetch(`${API_BASE_URL}/api/monitores/`, {
-            headers: { 'X-CSRFToken': getCSRFToken() }
-        });
-        
-        if (!response.ok) throw new Error('Error al cargar monitores');
-        
-        const monitores = await response.json();
-        
-        if (!monitores || monitores.length === 0) {
-            monitorSelect.innerHTML = '<option value="">No hay monitores disponibles</option>';
-            document.getElementById('monitoresCount').textContent = '0';
-            return;
+            container.innerHTML = html;
         }
-        
-        let options = '<option value="">-- Seleccione un monitor --</option>';
-        monitores.forEach(monitor => {
-            options += `<option value="${monitor.id}">${monitor.nombre} - CI: ${monitor.ci} - Cel: ${monitor.celular}</option>`;
-        });
-        
-        monitorSelect.innerHTML = options;
-        document.getElementById('monitoresCount').textContent = monitores.length;
-        
-    } catch (error) {
-        console.error('Error:', error);
-        monitorSelect.innerHTML = '<option value="">Error al cargar monitores</option>';
-    } finally {
-        monitorSelect.disabled = false;
-    }
-}
 
+        // Función para ver detalle del acta (opcional)
+        function verDetalleActa(reporteId, actaNumero) {
+            console.log(`Ver detalle del acta: ${actaNumero} (Reporte ID: ${reporteId})`);
+            // Aquí puedes agregar la lógica para mostrar un modal con detalles del acta
+            alert(`Acta: ${actaNumero}\nReporte ID: ${reporteId}`);
+        }
 
-// Iniciar actualización en tiempo real (cada 30 segundos)
-function iniciarActualizacionTiempoReal() {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
-    
-    refreshInterval = setInterval(async () => {
-        if (currentReporteId) {
+        // Función de escape HTML para evitar inyección
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Cargar lista de monitores
+        async function cargarMonitores() {
+            const monitorSelect = document.getElementById('monitorSelect');
+
             try {
-                const response = await fetch(`${API_BASE_URL}/api/transmision-reporte/${currentReporteId}/estadisticas/`, {
+                monitorSelect.disabled = true;
+                monitorSelect.innerHTML = '<option value="">Cargando monitores...</option>';
+
+                const response = await fetch(`${API_BASE_URL}/api/monitores/`, {
                     headers: { 'X-CSRFToken': getCSRFToken() }
                 });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    actualizarTarjetas(data);
-                    actualizarGraficoGeneral(data.general);
-                    actualizarGraficoDepartamental(data.departamentales);
-                    actualizarGraficoMunicipal(data.municipales);
+
+                if (!response.ok) throw new Error('Error al cargar monitores');
+
+                const monitores = await response.json();
+
+                if (!monitores || monitores.length === 0) {
+                    monitorSelect.innerHTML = '<option value="">No hay monitores disponibles</option>';
+                    document.getElementById('monitoresCount').textContent = '0';
+                    return;
                 }
+
+                let options = '<option value="">-- Seleccione un monitor --</option>';
+                monitores.forEach(monitor => {
+                    options += `<option value="${monitor.id}">${monitor.nombre} - CI: ${monitor.ci} - Cel: ${monitor.celular}</option>`;
+                });
+
+                monitorSelect.innerHTML = options;
+                document.getElementById('monitoresCount').textContent = monitores.length;
+
             } catch (error) {
-                console.error('Error en actualización en tiempo real:', error);
+                console.error('Error:', error);
+                monitorSelect.innerHTML = '<option value="">Error al cargar monitores</option>';
+            } finally {
+                monitorSelect.disabled = false;
             }
         }
-    }, 5000); // Cada 5 segundos
-}
 
-// Función para mostrar notificaciones
-function mostrarNotificacion(mensaje, tipo) {
-    // Crear elemento de notificación
-    const notificacion = document.createElement('div');
-    notificacion.className = `notificacion ${tipo}`;
-    notificacion.innerHTML = `
+
+        // Iniciar actualización en tiempo real (cada 30 segundos)
+        function iniciarActualizacionTiempoReal() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+
+            refreshInterval = setInterval(async () => {
+                if (currentReporteId) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/transmision-reporte/${currentReporteId}/estadisticas/`, {
+                            headers: { 'X-CSRFToken': getCSRFToken() }
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            actualizarTarjetas(data);
+                            actualizarGraficoGeneral(data.general);
+                            actualizarGraficoDepartamental(data.departamentales);
+                            actualizarGraficoMunicipal(data.municipales);
+                        }
+                    } catch (error) {
+                        console.error('Error en actualización en tiempo real:', error);
+                    }
+                }
+            }, 5000); // Cada 5 segundos
+        }
+
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo) {
+            // Crear elemento de notificación
+            const notificacion = document.createElement('div');
+            notificacion.className = `notificacion ${tipo}`;
+            notificacion.innerHTML = `
         <i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
         <span>${mensaje}</span>
     `;
-    
-    // Estilos para la notificación
-    notificacion.style.cssText = `
+
+            // Estilos para la notificación
+            notificacion.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
@@ -735,32 +738,33 @@ function mostrarNotificacion(mensaje, tipo) {
         z-index: 2000;
         animation: slideIn 0.3s ease;
     `;
-    
-    document.body.appendChild(notificacion);
-    
-    // Eliminar después de 3 segundos
-    setTimeout(() => {
-        notificacion.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            document.body.removeChild(notificacion);
-        }, 300);
-    }, 3000);
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadNavbar();
-    cargarTransmisiones();
-    inicializarMonitores();
-});
+            document.body.appendChild(notificacion);
 
-// Detener actualización al cambiar de página
-window.addEventListener('beforeunload', () => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
-});
+            // Eliminar después de 3 segundos
+            setTimeout(() => {
+                notificacion.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notificacion);
+                }, 300);
+            }, 3000);
+        }
 
-</script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNavbar();
+            cargarTransmisiones();
+            inicializarMonitores();
+        });
+
+        // Detener actualización al cambiar de página
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+
+    </script>
 
 </body>
+
 </html>

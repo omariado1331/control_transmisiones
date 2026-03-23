@@ -1,169 +1,172 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../static/style.css">
+    {% include "meta_tags.html" %}
+    <link rel="stylesheet" href="../static/style.css?v=2026.03.22">
 </head>
+
 <body>
-<div class="login-container">
-    <div class="logo-container">
-         <img src="../static/images/Logo_oep.png" alt="Logo" id="logo">
+    <div class="login-container">
+        <div class="logo-container">
+            <img src="../static/images/Logo_oep.png" alt="Logo" id="logo">
+        </div>
+
+        <h2>Bienvenido</h2>
+
+        <div class="input-group">
+            <i class="fas fa-user input-icon"></i>
+            <input type="text" id="username" placeholder="Usuario" autocomplete="off">
+        </div>
+
+        <div class="input-group">
+            <i class="fas fa-lock input-icon"></i>
+            <input type="password" id="password" placeholder="Contraseña">
+        </div>
+
+        <button onclick="login()" id="loginButton">
+            <span id="buttonText">Ingresar</span>
+            <i class="fas fa-spinner fa-spin loading" id="loading"></i>
+        </button>
+
+        <p id="error"></p>
+
     </div>
+    <script>
 
-    <h2>Bienvenido</h2>
-
-    <div class="input-group">
-        <i class="fas fa-user input-icon"></i>
-        <input type="text" id="username" placeholder="Usuario" autocomplete="off">
-    </div>
-
-    <div class="input-group">
-        <i class="fas fa-lock input-icon"></i>
-        <input type="password" id="password" placeholder="Contraseña">
-    </div>
-
-    <button onclick="login()" id="loginButton">
-        <span id="buttonText">Ingresar</span>
-        <i class="fas fa-spinner fa-spin loading" id="loading"></i>
-    </button>
-
-    <p id="error"></p>
-
-</div>
-<script>
-
-function getCSRFToken() {
-    return document.cookie.split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-}
-
-function login() {
-
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const button = document.getElementById("loginButton");
-    const buttonText = document.getElementById("buttonText");
-    const loading = document.getElementById("loading");
-    const errorElement = document.getElementById("error");
-
-    // Validación básica
-    if (!username || !password) {
-        showError("Por favor completa todos los campos");
-        mostrarNotificacion("Completa todos los campos", 'error')
-        return;
-    }
-
-    if (username.length < 3) {
-        showError("El usuario debe tener al menos 3 caracteres");
-        mostrarNotificacion("formato incorrecto", "error")
-        return;
-    }
-
-    if (password.length < 6) {
-        showError("La contraseña debe tener al menos 6 caracteres");
-        mostrarNotificacion("formato incorrecto", "error")
-        return;
-    }
-
-    // Mostrar estado de carga
-    buttonText.style.display = "none";
-    loading.style.display = "inline-block";
-    button.disabled = true;
-    errorElement.classList.remove('show');
-
-    fetch("api/login/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCSRFToken()
-        },
-        body: JSON.stringify({
-            username: username,
-            password: password
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-
-        if (data.redirect) {
-            showError("¡Login exitoso! Redirigiendo...", true);
-            mostrarNotificacion("Bienvenido !!! datos correctos", "success")
-            setTimeout(() => {
-                window.location.href = data.redirect;
-            }, 1500);
-        } else {
-            showError(data.error || "Error al iniciar sesión");
-            mostrarNotificacion("Algo salió mal :'( ", "error")
-            buttonText.style.display = "inline";
-            loading.style.display = "none";
-            button.disabled = false;
+        function getCSRFToken() {
+            return document.cookie.split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
         }
-    })
-    .catch(error => {
-        showError("Error de conexión");
-        mostrarNotificacion("No tienes conexion a Internet", "error")
-        console.error("Error:", error);
-        buttonText.style.display = "inline";
-        loading.style.display = "none";
-        button.disabled = false;
-    })
-    .finally( () => {
-        document.getElementById("buttonText").style.display = "inline";
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("loginButton").disabled = false;
-    })
-}
 
-// Permitir login con Enter
-document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        login();
-    }
-});
+        function login() {
 
-// funcion para mostrar error
-function showError(message, isSuccess = false) {
-    const errorElement = document.getElementById("error");
-    errorElement.innerText = message;
-    errorElement.classList.add('show');
-    
-    if (isSuccess) {
-        errorElement.classList.add('success-message');
-    } else {
-        errorElement.classList.remove('success-message');
-    }
-    
-    // Ocultar después de 5 segundos
-    setTimeout(() => {
-        errorElement.classList.remove('show');
-    }, 5000);
-}
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const button = document.getElementById("loginButton");
+            const buttonText = document.getElementById("buttonText");
+            const loading = document.getElementById("loading");
+            const errorElement = document.getElementById("error");
 
-// Función para mostrar el spinner y bloquear el botón
-function showLoading() {
-    const button = document.getElementById("loginButton");
-    const buttonText = document.getElementById("buttonText");
-    const loading = document.getElementById("loading");
-    
-    buttonText.style.display = "none";
-    loading.style.display = "inline-block";
-    button.disabled = true;
-}
+            // Validación básica
+            if (!username || !password) {
+                showError("Por favor completa todos los campos");
+                mostrarNotificacion("Completa todos los campos", 'error')
+                return;
+            }
 
-// Función para mostrar notificaciones
-function mostrarNotificacion(mensaje, tipo) {
-    // Crear elemento de notificación
-    const notificacion = document.createElement('div');
-    notificacion.className = `notificacion ${tipo}`;
-    notificacion.innerHTML = `
+            if (username.length < 3) {
+                showError("El usuario debe tener al menos 3 caracteres");
+                mostrarNotificacion("formato incorrecto", "error")
+                return;
+            }
+
+            if (password.length < 6) {
+                showError("La contraseña debe tener al menos 6 caracteres");
+                mostrarNotificacion("formato incorrecto", "error")
+                return;
+            }
+
+            // Mostrar estado de carga
+            buttonText.style.display = "none";
+            loading.style.display = "inline-block";
+            button.disabled = true;
+            errorElement.classList.remove('show');
+
+            fetch("api/login/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCSRFToken()
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+
+                    if (data.redirect) {
+                        showError("¡Login exitoso! Redirigiendo...", true);
+                        mostrarNotificacion("Bienvenido !!! datos correctos", "success")
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 1500);
+                    } else {
+                        showError(data.error || "Error al iniciar sesión");
+                        mostrarNotificacion("Algo salió mal :'( ", "error")
+                        buttonText.style.display = "inline";
+                        loading.style.display = "none";
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    showError("Error de conexión");
+                    mostrarNotificacion("No tienes conexion a Internet", "error")
+                    console.error("Error:", error);
+                    buttonText.style.display = "inline";
+                    loading.style.display = "none";
+                    button.disabled = false;
+                })
+                .finally(() => {
+                    document.getElementById("buttonText").style.display = "inline";
+                    document.getElementById("loading").style.display = "none";
+                    document.getElementById("loginButton").disabled = false;
+                })
+        }
+
+        // Permitir login con Enter
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+
+        // funcion para mostrar error
+        function showError(message, isSuccess = false) {
+            const errorElement = document.getElementById("error");
+            errorElement.innerText = message;
+            errorElement.classList.add('show');
+
+            if (isSuccess) {
+                errorElement.classList.add('success-message');
+            } else {
+                errorElement.classList.remove('success-message');
+            }
+
+            // Ocultar después de 5 segundos
+            setTimeout(() => {
+                errorElement.classList.remove('show');
+            }, 5000);
+        }
+
+        // Función para mostrar el spinner y bloquear el botón
+        function showLoading() {
+            const button = document.getElementById("loginButton");
+            const buttonText = document.getElementById("buttonText");
+            const loading = document.getElementById("loading");
+
+            buttonText.style.display = "none";
+            loading.style.display = "inline-block";
+            button.disabled = true;
+        }
+
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo) {
+            // Crear elemento de notificación
+            const notificacion = document.createElement('div');
+            notificacion.className = `notificacion ${tipo}`;
+            notificacion.innerHTML = `
         <i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
         <span>${mensaje}</span>
     `;
-    
-    // Estilos para la notificación
-    notificacion.style.cssText = `
+
+            // Estilos para la notificación
+            notificacion.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
@@ -178,27 +181,28 @@ function mostrarNotificacion(mensaje, tipo) {
         z-index: 2000;
         animation: slideIn 0.3s ease;
     `;
-    
-    document.body.appendChild(notificacion);
-    
-    // Eliminar después de 3 segundos
-    setTimeout(() => {
-        notificacion.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            document.body.removeChild(notificacion);
-        }, 300);
-    }, 3000);
-}
 
-// Limpiar mensajes de error al escribir
-document.getElementById("username").addEventListener("input", function() {
-    document.getElementById("error").classList.remove('show');
-});
+            document.body.appendChild(notificacion);
 
-document.getElementById("password").addEventListener("input", function() {
-    document.getElementById("error").classList.remove('show');
-});
-</script>
+            // Eliminar después de 3 segundos
+            setTimeout(() => {
+                notificacion.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notificacion);
+                }, 300);
+            }, 3000);
+        }
+
+        // Limpiar mensajes de error al escribir
+        document.getElementById("username").addEventListener("input", function () {
+            document.getElementById("error").classList.remove('show');
+        });
+
+        document.getElementById("password").addEventListener("input", function () {
+            document.getElementById("error").classList.remove('show');
+        });
+    </script>
 
 </body>
+
 </html>

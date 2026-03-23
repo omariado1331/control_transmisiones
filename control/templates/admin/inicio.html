@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Inicio - Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../../static/navbar.css">
-    <link rel="stylesheet" href="../../static/inicio.css">
+    {% include "meta_tags.html" %}
+    <link rel="stylesheet" href="../../static/navbar.css?v=2026.03.22">
+    <link rel="stylesheet" href="../../static/inicio.css?v=2026.03.22">
 </head>
+
 <body>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="../../static/navbar.js"></script>
+    <script src="../../static/navbar.js?v=2026.03.22"></script>
 
     <div id="navbar"></div>
 
@@ -90,7 +93,9 @@
                 <span class="badge-count" id="transmisionesCount">0</span>
             </div>
             <div class="cards-container" id="transmisionesContainer">
-                <div class="loader-container"><div class="loader"></div></div>
+                <div class="loader-container">
+                    <div class="loader"></div>
+                </div>
             </div>
         </div>
 
@@ -101,109 +106,111 @@
                 <span class="badge-count" id="actividadesCount">0</span>
             </div>
             <div class="cards-container" id="actividadesContainer">
-                <div class="loader-container"><div class="loader"></div></div>
+                <div class="loader-container">
+                    <div class="loader"></div>
+                </div>
             </div>
         </div>
     </div>
 
-<script>
+    <script>
 
-function getCSRFToken() {
-    return document.cookie.split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-}
+        function getCSRFToken() {
+            return document.cookie.split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                ?.split('=')[1];
+        }
 
-function loadNavbar() {
-    fetch('/static/navbar.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('navbar').innerHTML = data;
+        function loadNavbar() {
+            fetch('/static/navbar.html?v=2026.03.22')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('navbar').innerHTML = data;
 
-            if (window.initNavbar) {
-                window.initNavbar();
+                    if (window.initNavbar) {
+                        window.initNavbar();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar navbar:', error);
+                    document.getElementById('navbar').innerHTML = '<div class="navbar">Error al cargar navbar</div>';
+                });
+        }
+
+
+        async function cargarDashboard() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/admin/inicio/`, {
+                    headers: { 'X-CSRFToken': getCSRFToken() }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar datos');
+                mostrarNotificacion("Datos cargados correctamente", "success");
+                const data = await response.json();
+
+                // Actualizar totales
+                document.getElementById('totalActas').textContent = (data.total_actas || 0).toLocaleString();
+                document.getElementById('totalRecintos').textContent = (data.total_recintos || 0).toLocaleString();
+
+                // Actualizar gráfico de recintos
+                const urbanos = data.recintos_urbanos || 0;
+                const rurales = data.recintos_rurales || 0;
+                const total = urbanos + rurales;
+
+                const porcentajeUrbanos = total > 0 ? (urbanos / total) * 100 : 0;
+                const porcentajeRurales = total > 0 ? (rurales / total) * 100 : 0;
+
+                document.getElementById('barraUrbanos').style.width = `${porcentajeUrbanos}%`;
+                document.getElementById('urbanosPorcentaje').textContent = `${Math.round(porcentajeUrbanos)}%`;
+                document.getElementById('urbanosValor').textContent = urbanos;
+
+                document.getElementById('barraRurales').style.width = `${porcentajeRurales}%`;
+                document.getElementById('ruralesPorcentaje').textContent = `${Math.round(porcentajeRurales)}%`;
+                document.getElementById('ruralesValor').textContent = rurales;
+
+                // Cargar transmisiones
+                cargarTransmisiones(data.transmisiones);
+
+                // Cargar actividades
+                cargarActividades(data.actividades);
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('transmisionesContainer').innerHTML = `
+            <div class="empty-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error al cargar los datos</p>
+            </div>
+        `;
+                document.getElementById('actividadesContainer').innerHTML = `
+            <div class="empty-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error al cargar los datos</p>
+            </div>
+        `;
             }
-        })
-        .catch(error => {
-            console.error('Error al cargar navbar:', error);
-            document.getElementById('navbar').innerHTML = '<div class="navbar">Error al cargar navbar</div>';
-        });
-}
+        }
 
+        function cargarTransmisiones(transmisiones) {
+            const container = document.getElementById('transmisionesContainer');
+            const countSpan = document.getElementById('transmisionesCount');
 
-async function cargarDashboard() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/inicio/`, {
-            headers: { 'X-CSRFToken': getCSRFToken() }
-        });
-        
-        if (!response.ok) throw new Error('Error al cargar datos');
-        mostrarNotificacion("Datos cargados correctamente", "success");
-        const data = await response.json();
-        
-        // Actualizar totales
-        document.getElementById('totalActas').textContent = (data.total_actas || 0).toLocaleString();
-        document.getElementById('totalRecintos').textContent = (data.total_recintos || 0).toLocaleString();
-        
-        // Actualizar gráfico de recintos
-        const urbanos = data.recintos_urbanos || 0;
-        const rurales = data.recintos_rurales || 0;
-        const total = urbanos + rurales;
-        
-        const porcentajeUrbanos = total > 0 ? (urbanos / total) * 100 : 0;
-        const porcentajeRurales = total > 0 ? (rurales / total) * 100 : 0;
-        
-        document.getElementById('barraUrbanos').style.width = `${porcentajeUrbanos}%`;
-        document.getElementById('urbanosPorcentaje').textContent = `${Math.round(porcentajeUrbanos)}%`;
-        document.getElementById('urbanosValor').textContent = urbanos;
-        
-        document.getElementById('barraRurales').style.width = `${porcentajeRurales}%`;
-        document.getElementById('ruralesPorcentaje').textContent = `${Math.round(porcentajeRurales)}%`;
-        document.getElementById('ruralesValor').textContent = rurales;
-        
-        // Cargar transmisiones
-        cargarTransmisiones(data.transmisiones);
-        
-        // Cargar actividades
-        cargarActividades(data.actividades);
-        
-    } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('transmisionesContainer').innerHTML = `
-            <div class="empty-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>Error al cargar los datos</p>
-            </div>
-        `;
-        document.getElementById('actividadesContainer').innerHTML = `
-            <div class="empty-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>Error al cargar los datos</p>
-            </div>
-        `;
-    }
-}
-
-function cargarTransmisiones(transmisiones) {
-    const container = document.getElementById('transmisionesContainer');
-    const countSpan = document.getElementById('transmisionesCount');
-    
-    if (!transmisiones || transmisiones.length === 0) {
-        container.innerHTML = `
+            if (!transmisiones || transmisiones.length === 0) {
+                container.innerHTML = `
             <div class="empty-message">
                 <i class="fas fa-broadcast-tower"></i>
                 <p>No hay transmisiones registradas</p>
             </div>
         `;
-        countSpan.textContent = '0';
-        return;
-    }
-    
-    countSpan.textContent = transmisiones.length;
-    
-    let html = '';
-    transmisiones.forEach(t => {
-        html += `
+                countSpan.textContent = '0';
+                return;
+            }
+
+            countSpan.textContent = transmisiones.length;
+
+            let html = '';
+            transmisiones.forEach(t => {
+                html += `
             <div class="info-card-transmision">
                 <div class="card-icon">
                     <i class="fas fa-broadcast-tower"></i>
@@ -219,31 +226,31 @@ function cargarTransmisiones(transmisiones) {
                 </div>
             </div>
         `;
-    });
-    
-    container.innerHTML = html;
-}
+            });
 
-function cargarActividades(actividades) {
-    const container = document.getElementById('actividadesContainer');
-    const countSpan = document.getElementById('actividadesCount');
-    
-    if (!actividades || actividades.length === 0) {
-        container.innerHTML = `
+            container.innerHTML = html;
+        }
+
+        function cargarActividades(actividades) {
+            const container = document.getElementById('actividadesContainer');
+            const countSpan = document.getElementById('actividadesCount');
+
+            if (!actividades || actividades.length === 0) {
+                container.innerHTML = `
             <div class="empty-message">
                 <i class="fas fa-history"></i>
                 <p>No hay actividades registradas</p>
             </div>
         `;
-        countSpan.textContent = '0';
-        return;
-    }
-    
-    countSpan.textContent = actividades.length;
-    
-    let html = '';
-    actividades.forEach(a => {
-        html += `
+                countSpan.textContent = '0';
+                return;
+            }
+
+            countSpan.textContent = actividades.length;
+
+            let html = '';
+            actividades.forEach(a => {
+                html += `
             <div class="info-card-actividad">
                 <div class="card-icon">
                     <i class="fas fa-clipboard-list"></i>
@@ -259,23 +266,23 @@ function cargarActividades(actividades) {
                 </div>
             </div>
         `;
-    });
-    
-    container.innerHTML = html;
-}
+            });
 
-// Función para mostrar notificaciones
-function mostrarNotificacion(mensaje, tipo) {
-    // Crear elemento de notificación
-    const notificacion = document.createElement('div');
-    notificacion.className = `notificacion ${tipo}`;
-    notificacion.innerHTML = `
+            container.innerHTML = html;
+        }
+
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo) {
+            // Crear elemento de notificación
+            const notificacion = document.createElement('div');
+            notificacion.className = `notificacion ${tipo}`;
+            notificacion.innerHTML = `
         <i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
         <span>${mensaje}</span>
     `;
-    
-    // Estilos para la notificación
-    notificacion.style.cssText = `
+
+            // Estilos para la notificación
+            notificacion.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
@@ -290,29 +297,30 @@ function mostrarNotificacion(mensaje, tipo) {
         z-index: 2000;
         animation: slideIn 0.3s ease;
     `;
-    
-    document.body.appendChild(notificacion);
-    
-    // Eliminar después de 3 segundos
-    setTimeout(() => {
-        notificacion.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            document.body.removeChild(notificacion);
-        }, 300);
-    }, 3000);
-}
 
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+            document.body.appendChild(notificacion);
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadNavbar();
-    cargarDashboard();
-});
-</script>
+            // Eliminar después de 3 segundos
+            setTimeout(() => {
+                notificacion.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notificacion);
+                }, 300);
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNavbar();
+            cargarDashboard();
+        });
+    </script>
 </body>
+
 </html>
