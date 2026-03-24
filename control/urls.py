@@ -18,6 +18,7 @@ from .views import (
     api_estadisticas_actas,
     api_monitores,
     api_monitor_actas,
+    exportar_reporte_excel,
 
 )
 
@@ -39,8 +40,7 @@ urlpatterns = [
     path("api/admin/inicio/", api_admin_inicio, name="Inicio administrador"),
     path("api/transmision-reporte/<int:transmision_id>/estadisticas/", api_estadisticas_actas, name="estadisticas actas"),
     path("api/monitores/", api_monitores, name="Monitores"),
-    path("api/monitor/<int:monitor_id>/transmision/<int:transmision_id>/actas/", api_monitor_actas, name="api_monitor_actas"
-),
-
+    path("api/monitor/<int:monitor_id>/transmision/<int:transmision_id>/actas/", api_monitor_actas, name="api_monitor_actas"),
+    path("api/transmision/<int:transmision_id>/exportar-excel/", exportar_reporte_excel, name="exportar_reporte_excel"),
 
 ]

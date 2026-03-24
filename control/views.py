@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -8,7 +8,8 @@ from django.db.models import Prefetch, Count, Q
 from .models import Monitor, Soporte, Coordinador
 from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login, logout
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from openpyxl import Workbook
 import json
 from .models import (
     Monitor, 
@@ -455,3 +456,126 @@ def api_monitor_actas(request, monitor_id, transmision_id):
         data.append(operador_data)
 
     return JsonResponse(data, safe=False)
+
+@login_required
+def exportar_reporte_excel(request, transmision_id):
+    wb = Workbook()
+
+    # hoja 1 reporte general
+    ws1 = wb.active
+    ws1.title = "Reporte General"
+    transmision = get_object_or_404(Transmision, id=transmision_id)
+    qs = ReporteTransmision.objects.filter(
+        transmision_id=transmision_id
+    ).select_related("acta")
+
+    def contar(qs):
+        return {
+            "total": qs.count(),
+            "TRANSMITIDO": qs.filter(estado="TRANSMITIDO").count(),
+            "REVISADO_RECHAZADO": qs.filter(estado="REVISADO_RECHAZADO").count(),
+            "ENVIADO_NO_REVISADO": qs.filter(estado="ENVIADO_NO_REVISADO").count(),
+            "SIN_ENVIAR": qs.filter(estado="SIN_ENVIAR").count()
+        }
+    
+    general = contar(qs)
+
+    departamentales = contar(qs.filter(acta__numero__endswith="1"))
+    municipales = contar(qs.filter(acta__numero__endswith="7"))
+
+    # Encabezado
+    ws1.append(["REPORTE GENERAL"])
+    ws1.append([])
+
+    # general
+    ws1.append(["TOTAL ACTAS", general["total"]])
+    ws1.append(["TRANSMITIDO", general["TRANSMITIDO"]])
+    ws1.append(["REVISADO RECHAZADO", general["REVISADO_RECHAZADO"]])
+    ws1.append(["ENVIADO NO REVISADO", general["ENVIADO_NO_REVISADO"]])
+    ws1.append(["SIN ENVIAR", general["SIN_ENVIAR"]])
+
+    # departamentales
+    ws1.append([])
+    ws1.append(["ACTAS DEPARTAMENTALES"])
+    ws1.append(["TOTAL", departamentales["total"]])
+    ws1.append(["TRANSMITIDO", departamentales["TRANSMITIDO"]])
+    ws1.append(["REVISADO RECHAZADO", departamentales["REVISADO_RECHAZADO"]])
+    ws1.append(["ENVIADO NO REVISADO", departamentales["ENVIADO_NO_REVISADO"]])
+    ws1.append(["SIN ENVIAR", departamentales["SIN_ENVIAR"]])
+
+    #municipales
+    ws1.append([])
+    ws1.append(["ACTAS MUNICIPALES"])
+    ws1.append(["TOTAL", municipales["total"]])
+    ws1.append(["TRANSMITIDO", municipales["TRANSMITIDO"]])
+    ws1.append(["REVISADO RECHAZADO", municipales["REVISADO_RECHAZADO"]])
+    ws1.append(["ENVIADO NO REVISADO", municipales["ENVIADO_NO_REVISADO"]])
+    ws1.append(["SIN ENVIAR", municipales["SIN_ENVIAR"]])
+
+    # hoja 2 reporte actas
+
+    ws2 = wb.create_sheet(title="Detalle actas")
+
+    ws2.append([
+        "ACTA",
+        "ESTADO",
+        "OPERADOR",
+        "RECINTO",
+        "MONITOR"
+    ])
+
+    reportes = qs.select_related(
+        "acta",
+        "operador__recinto",
+        "operador__monitor"
+    )
+
+    for r in reportes:
+        operador = r.operador
+        monitor = operador.monitor if operador else None
+
+        ws2.append([
+            r.acta.numero,
+            r.estado,
+            f"{operador.nombre} {operador.apellido_paterno or ''} {operador.apellido_materno or ''}",
+            operador.recinto.nombre if operador and operador.recinto else "",
+            f"{monitor.nombre} {monitor.apellido_paterno or ''} {monitor.apellido_materno or ''}" if monitor else ""
+        ])
+    
+    # hoja 3 reporte monitores
+
+    ws3 = wb.create_sheet(title="Reporte Monitores")
+
+    ws3.append([
+        "NOMBRE MONITOR",
+        "TOTAL ACTAS",
+        "TRANSMITIDO",
+        "ENVIADO NO REVISADO",
+        "REVISADO RECHAZADO",
+        "SIN ENVIAR"
+    ])
+
+    monitores = Monitor.objects.all()
+
+    for m in monitores:
+        qs_m = qs.filter(operador__monitor=m)
+
+        ws3.append([
+            f"{m.nombre} {m.apellido_paterno or ''}",
+            qs_m.count(),
+            qs_m.filter(estado="TRANSMITIDO").count(),
+            qs_m.filter(estado="ENVIADO_NO_REVISADO").count(),
+            qs_m.filter(estado="REVISADO_RECHAZADO").count(),
+            qs_m.filter(estado="SIN_ENVIAR").count(),
+        ])
+    
+    # respuesta
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    response["Content-Disposition"] = f'attachment; filename="reporte_{transmision.descripcion if transmision else ''}.xlsx"'
+
+    wb.save(response)
+
+    return response

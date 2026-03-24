@@ -27,6 +27,10 @@
                 <i class="fas fa-sync-alt"></i>
                 Cargar Datos
             </button>
+            <button class="exportar-btn" onclick="exportarReporte()" id="exportarBtn" disabled>
+                <i class="fas fa-download"></i>
+                Descargar Reporte
+            </button>
         </div>
 
         <!-- Contenedor de resultados -->
@@ -121,6 +125,8 @@
         let refreshInterval = null;
         let currentReporteId = null;
 
+        let currentSelectedTransmisionId = null;
+
         // cargar el Navbar
         function loadNavbar() {
             fetch('/static/navbar.html?v=2026.03.22')
@@ -168,6 +174,18 @@
 
                 select.innerHTML = options;
 
+                // Agregar evento change para habilitar/deshabilitar botones
+                select.removeEventListener('change', actualizarBotonExportar);
+                select.addEventListener('change', () => {
+                    actualizarBotonExportar();
+                    // También habilitar/deshabilitar botón de cargar
+                    cargarBtn.disabled = !select.value;
+                });
+                
+                // Inicializar estado de los botones
+                actualizarBotonExportar();
+                cargarBtn.disabled = true;
+
             } catch (error) {
                 console.error('Error:', error);
                 select.innerHTML = '<option value="">Error al cargar transmisiones</option>';
@@ -202,12 +220,8 @@
                 const response = await fetch(`${API_BASE_URL}/api/transmision-reporte/${reporteId}/estadisticas/`, {
                     headers: { 'X-CSRFToken': getCSRFToken() }
                 });
-                console.log(response);
-
                 if (!response.ok) throw new Error('Error al cargar estadísticas');
-
                 const data = await response.json();
-                console.log(data);
                 // Mostrar resultados
                 resultadosContainer.style.display = 'block';
 
@@ -633,7 +647,7 @@
 
         // Función para ver detalle del acta (opcional)
         function verDetalleActa(reporteId, actaNumero) {
-            console.log(`Ver detalle del acta: ${actaNumero} (Reporte ID: ${reporteId})`);
+            // console.log(`Ver detalle del acta: ${actaNumero} (Reporte ID: ${reporteId})`);
             // Aquí puedes agregar la lógica para mostrar un modal con detalles del acta
             alert(`Acta: ${actaNumero}\nReporte ID: ${reporteId}`);
         }
@@ -684,6 +698,87 @@
             }
         }
 
+        // Función para actualizar el estado del botón de exportar
+        function actualizarBotonExportar() {
+            const exportarBtn = document.getElementById('exportarBtn');
+            const transmisionSelect = document.getElementById('transmisionSelect');
+            const selectedValue = transmisionSelect.value;
+            
+            if (selectedValue && selectedValue !== '') {
+                exportarBtn.disabled = false;
+                currentSelectedTransmisionId = selectedValue;
+            } else {
+                exportarBtn.disabled = true;
+                currentSelectedTransmisionId = null;
+            }
+        }
+        
+// Función para exportar el reporte
+async function exportarReporte() {
+    const transmisionSelect = document.getElementById('transmisionSelect');
+    const transmisionId = transmisionSelect.value;
+    const exportarBtn = document.getElementById('exportarBtn');
+    
+    if (!transmisionId) {
+        alert('Por favor seleccione una transmisión');
+        return;
+    }
+    
+    // Mostrar estado de carga en el botón
+    const originalText = exportarBtn.innerHTML;
+    exportarBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Descargando...';
+    exportarBtn.disabled = true;
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/transmision/${transmisionId}/exportar-excel/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al generar el reporte');
+        }
+        
+        // Obtener el blob del archivo
+        const blob = await response.blob();
+        
+        // Crear URL para descarga
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // Extraer nombre del archivo del header Content-Disposition si existe
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `reporte_transmision_${transmisionId}.xlsx`;
+        
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1].replace(/['"]/g, '');
+            }
+        }
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        // Mostrar notificación de éxito
+        mostrarNotificacion('Reporte descargado correctamente', 'success');
+        
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarNotificacion('Error al descargar el reporte', 'error');
+    } finally {
+        // Restaurar botón
+        exportarBtn.innerHTML = originalText;
+        exportarBtn.disabled = false;
+        actualizarBotonExportar(); // Re-evaluar si debe estar habilitado
+    }
+}
 
         // Iniciar actualización en tiempo real (cada 30 segundos)
         function iniciarActualizacionTiempoReal() {
